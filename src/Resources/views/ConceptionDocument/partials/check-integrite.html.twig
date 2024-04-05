@@ -1,0 +1,18 @@
+<h4>Résultats de la vérification d'intégrité :</h4>
+
+{% if anomalies|length == 0 %}
+  <div class="text-success">
+    <i class="fa fa-check-circle fa-fw"></i>Aucun problème n'a été détecté
+  </div>
+{% else %}
+  <div class="text-danger">
+    <i class="fa fa-check-circle fa-fw"></i>Des anomalies ont été détectées !
+  </div>
+
+  <ul>
+    {% for anomalie in anomalies %}
+      <li>{{ anomalie|raw }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+

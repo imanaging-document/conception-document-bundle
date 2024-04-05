@@ -1,0 +1,214 @@
+<div class="pull-right">
+  <a href="{{ path('conception_document_conception_tool_generate_pdf', {id: page.template.id, entityId: entity_id}) }}" class="text-danger mt-4">
+    <i class="fa fa-file-pdf fa-3x"></i>
+  </a>
+</div>
+
+<h2 class="text-white">
+  {{ page.libelle }}
+  <a href="{{ path('conception_document_conception_tool_remove_page', {id: page.id, entityId: entity_id}) }}">
+    <i class="fa fa-trash text-danger fa-lg"></i>
+  </a>
+</h2>
+
+<div class="container-verif-integrite">
+  <button class="btn-verifier-integrite-page" data-page-id="{{ page.id }}">
+    <i class="fa fa-check fa-fw"></i>Vérifier l'intégrité de cette page
+  </button>
+
+  <div id="div-result-verif-integrite">
+
+  </div>
+</div>
+
+<div class="tab mt-4">
+  <button id="default-tab" class="main-tablinks" data-tab-target="liste-blocs"><i class="fa fa-bars fa-fw"></i>Liste des blocs</button>
+  <button class="main-tablinks" data-tab-target="ajouter-bloc"><i class="fa fa-plus-circle fa-fw"></i>Ajouter un bloc</button>
+  <button class="main-tablinks" data-tab-target="conditions"><i class="fa fa-question-circle fa-fw"></i>Conditions</button>
+  <button class="main-tablinks" data-tab-target="aide"><i class="fa fa-info-circle fa-fw"></i>Aide</button>
+</div>
+
+<div id="liste-blocs" class="main-tabcontent">
+  <div id="div-multi-rows" class="d-none">
+    <p>
+      <i class="fa fa-info-circle fa-fw"></i>Sélectionnez l'action à effectuer pour les  <b><span id="span-nb-blocs-selected"></span> blocs</b> sélectionnés
+    </p>
+
+    <div class="form-group">
+      <label for="action_to_multi_blocs">Type d'action</label>
+      <select id="action_to_multi_blocs">
+        <option value="deplacer_haut">Déplacer vers le haut</option>
+        <option value="deplacer_bas">Déplacer vers le bas</option>
+        <option value="deplacer_gauche">Déplacer vers la gauche</option>
+        <option value="deplacer_droite">Déplacer vers la droite</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="nb_mm_to_move">Distance en millimètre</label>
+      <input id="nb_mm_to_move" type="text">
+    </div>
+
+    <div id="error-multi-blocs" class="text-danger"></div>
+
+    <button id="btn-valider-action-multi-blocs" class="btn btn-success w-100">
+      <i class="fa fa-check-circle fa-fw"></i>Valider l'action
+    </button>
+  </div>
+
+  <table id="table-blocs" class="table table-bordered custom-table mt-2">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Libellé</th>
+        <th>Type de bloc</th>
+        <th class="text-center">
+          <i class="fa fa-pen"></i>
+        </th>
+        <th class="text-center">
+          <input id="cbx-select-all-blocs" type="checkbox">
+        </th>
+        <th class="text-center">
+          <i class="fa fa-copy"></i>
+        </th>
+        <th class="text-center">
+          <i class="fa fa-trash"></i>
+        </th>
+        <th class="text-center">
+          <i class="fa fa-arrows-alt"></i>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for bloc in page.blocs %}
+        {{ _self.showLignes(bloc, entity_id, page) }}
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div id="loader-edit-bloc" class="d-none mt-4 text-center">
+    <i class="fa fa-spinner fa-spin fa-fw"></i>Chargement en cours ...
+  </div>
+
+  <div id="div-save-style" class="mt-4 text-center">
+  </div>
+
+  <div id="div-edit-bloc" class="mt-4">
+  </div>
+</div>
+<div id="ajouter-bloc" class="main-tabcontent">
+  <form action="{{ path('conception_document_conception_tool_bloc_add', {pageId: page.id, entityId: entity_id}) }}" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="libelle">Libellé</label>
+      <input type="text" id="libelle" name="libelle" class="form-control" placeholder="Saisir ici le nom du bloc" required>
+    </div>
+
+    <div class="form-group">
+      <label for="type_bloc">Type de bloc</label>
+      <select name="type_bloc" id="type_bloc" required>
+        <option value=""></option>
+        {% for type in types_bloc %}
+          <option value="{{ type.code }}">{{ type.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div id="div-type-bloc-data">
+    </div>
+
+    <button type="submit" class="btn-new-bloc">
+      <i class="fa fa-plus-circle fa-fw"></i>Ajouter un nouveau bloc
+    </button>
+  </form>
+</div>
+<div id="conditions" class="main-tabcontent">
+  {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/conditions.html.twig' with {'conditions': page.conditions, 'cible': 'page', 'page_id': page.id } %}
+</div>
+<div id="aide" class="main-tabcontent">
+  <p>
+    Sélectionnez un élément en double cliquant sur celui-ci, puis déplacez le à l'endroit souhaité,
+    validez ensuite son positionnement en effectuant un simple clic.
+  </p>
+
+  <p>
+    Effectuez un clic droit sur un élément afin de définir ses positions en X et en Y <b>manuellement</b>.
+  </p>
+
+  <p>Les informations de publipostage sont fictives sur cette pré-visualisation.
+  </p>
+
+  <p>Toutes les dimensions se renseignent <b class="text-danger">en millimètre</b>.</p>
+
+  <p>Au survol d'un bloc dans la liste, celui ci se mettra en évidence sur la prévisualisation (peut ne pas fonctionner pour les images).</p>
+
+  <p>Cliquez sur un bloc dans la liste pour le séléctionner, vous pouvez ensuite le déplacer à l'aide des flèches de votre clavier.
+    Appuyez sur la touche "Entrée" pour enregistrer sa nouvelle position.</p>
+
+  <p>L'ordre des blocs est celui définis par le tableau, le plus en haut est le plus en arrière-plan (et inversement).
+    Cet ordre est modifiable en faisant glisser les blocs dans le tableau.</p>
+
+  <p>Une <b>*</b> à côté d'un numéro de page signifie que cette page ne serait <b>pas visible pour l'élément sélectionné</b>.</p>
+</div>
+
+{% macro showLignes(bloc, entity_id, page) %}
+  <tr id="bloc_{{ bloc.id }}" class="bloc-row" data-bloc-code="{{ bloc.code }}">
+    <td class="ordre" data-bloc-id="{{ bloc.id }}">{{ bloc.ordre }}</td>
+    <td>{{ bloc.libelle }}</td>
+    <td>{{ bloc.type.libelle }}</td>
+    <td class="text-center">
+      <i class="fa fa-pen pointer edit-bloc"
+         data-url-edition="{{ path('conception_document_conception_tool_bloc_load_edition', {id: bloc.id, entityId: entity_id}) }}"
+         data-bloc-id="{{ bloc.id }}"></i>
+    </td>
+    <td>
+      <input type="checkbox" class="cbx-bloc" data-bloc-id="{{ bloc.id }}">
+    </td>
+    <td class="text-center">
+      <a href="{{ path('conception_document_conception_tool_bloc_duplicate', {pageId: page.id, entityId: entity_id, blocId: bloc.id}) }}">
+        <i class="fa fa-copy"></i>
+      </a>
+    </td>
+    <td class="text-center">
+      <a href="{{ path('conception_document_conception_tool_bloc_remove', {pageId: page.id, entityId: entity_id, blocId: bloc.id}) }}">
+        <i class="fa fa-trash text-danger"></i>
+      </a>
+    </td>
+    <td class="text-center sortHandle">
+      <i class="fa fa-arrows-alt pointer"></i>
+    </td>
+  </tr>
+{% endmacro %}
+
+<script>
+  $(document).ready(function(){
+    $("#default-tab").trigger('click');
+
+    $("#table-blocs tbody").sortable({
+      axis: 'y',
+      handle: '.sortHandle',
+      stop: updateIndex
+    }).disableSelection();
+  });
+
+  updateIndex = function(e, ui){
+    $('td.ordre', ui.item.parent()).each(function (i) {
+      $(this).html(i + 1);
+    });
+    let data = {};
+    $.each($('td.ordre'), function () {
+      data[$(this).data('bloc-id')] = parseInt($(this).text()); // key: segmentformulaire.id => value: numero ordre
+    });
+
+    $.ajax({
+      url: "{{ path('conception_document_conception_tool_save_blocs_order', {pageId: page.id}) }}",
+      type: 'POST',
+      data: data,
+      success: function () {
+        location.reload();
+      },
+      error: function () {
+        alert('Erreur lors de l\'enregistrement de l\'ordre !')
+      }
+    });
+  }
+</script>

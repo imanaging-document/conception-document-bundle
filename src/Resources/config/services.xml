@@ -5,10 +5,30 @@
         https://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
-        <service id="imanaging_conception_document.conception_document" class="Imanaging\ConceptionDocumentBundle\ConceptionDocument">
+        <service id="imanaging_conception_document.conception_document" class="Imanaging\ConceptionDocumentBundle\ConceptionDocument" public="true">
             <argument type="service" id="doctrine.orm.default_entity_manager" />
             <argument />
+            <argument />
+            <argument type="service" id="twig" />
+            <argument type="service" id="app.conception_personnalisation_service" />
         </service>
         <service id="Imanaging\ConceptionDocumentBundle\ConceptionDocument" alias="imanaging_conception_document.conception_document" public="false" />
+
+        <service id="imanaging_conception_document.conception_document_controller" class="Imanaging\ConceptionDocumentBundle\Controller\ConceptionDocumentController" public="true">
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+            <tag name="container.service_subscriber"/>
+            <argument type="service" id="doctrine.orm.default_entity_manager" />
+            <argument type="service" id="imanaging_conception_document.conception_document" />
+            <argument type="service" id="twig" />
+            <argument type="service" id="app.conception_personnalisation_service" />
+        </service>
+
+        <service id="imanaging_conception_document.twig_functions" class="Imanaging\ConceptionDocumentBundle\Twig\TwigFunctions">
+            <argument type="service" id="app.conception_personnalisation_service" />
+            <argument />
+            <tag name="twig.extension" />
+        </service>
     </services>
 </container>

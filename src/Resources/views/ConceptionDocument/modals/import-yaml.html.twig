@@ -1,0 +1,36 @@
+<div class="modal fade" id="importerConceptionModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="exampleModalLabel">Importer une conception</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger" style="margin: 0;">
+          <i class="fa fa-exclamation-circle fa-lg fa-fw"></i>Attention, cet import écrasera la configuration actuelle !
+        </div>
+
+        <h5>Cette action est irréversible et supprimera la configuration actuelle de cette conception !</h5>
+
+        <div class="mt-4">
+          <form action="{{ path('conception_document_import_yaml', {id: template.id}) }}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+              <div class="form-group">
+                <label for="fichier">Fichier</label>
+                <input type="file" class="form-control-file" id="fichier" name="fichier">
+              </div>
+            </div>
+
+            <div class="text-center">
+              <button type="submit" class="btn btn-success">
+                <i class="fa fa-check-circle fa-fw"></i>Valider l'import
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

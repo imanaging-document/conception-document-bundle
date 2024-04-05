@@ -1,0 +1,78 @@
+{% if conditions|length > 0 %}
+  {% if cible == 'page' %}
+    <h3 class="text-danger"><i class="fa fa-info-circle fa-fw"></i>Cette page possède des conditions. Elle ne sera génerée que si elle respecte les conditions ci-dessous.</h3>
+  {% else %}
+    <h3 class="text-danger"><i class="fa fa-info-circle fa-fw"></i>Ce bloc possède des conditions. Il ne sera visible que s'il respecte les conditions ci-dessous.</h3>
+  {% endif %}
+
+  <table class="table table-bordered custom-table">
+    <tbody>
+    {% for condition in conditions %}
+      <tr>
+        <td>{{ condition.typeCondition }}</td>
+        <td>{{ condition.typeComparaison }}</td>
+        <td>{{ condition.valeurComparaison }}</td>
+        <td class="text-center">.
+          <a href="{{ path('conception_document_conception_tool_remove_condition', {id: condition.id, entityId: entity_id}) }}">
+            <i class="fa fa-trash fa-lg text-danger pointer"></i>
+          </a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  {% if cible == 'page' %}
+    <h3 class="text-success"><i class="fa fa-info-circle fa-fw"></i>Cette page ne possède aucune condition. Elle sera génerée quoi qu'il arrive.</h3>
+  {% else %}
+    <h3 class="text-success"><i class="fa fa-info-circle fa-fw"></i>Ce bloc ne possède aucune condition. Il sera visible quoi qu'il arrive.</h3>
+  {% endif %}
+{% endif %}
+
+<h5><i class="fa fa-plus-circle fa-fw"></i>Ajouter une nouvelle condition</h5>
+<form
+    {% if cible == 'page' %}
+      action="{{ path('conception_document_conception_tool_page_add_condition', {id: page_id, entityId: entity_id}) }}"
+    {% else %}
+      action="{{ path('conception_document_conception_tool_bloc_add_condition', {id: bloc_id, entityId: entity_id}) }}"
+    {% endif %}
+    method="post">
+  <div class="form-group">
+    <label for="type_condition">Type de condition</label>
+    <select name="type_condition" id="type_condition">
+      {% for code_type_condition, libelle in types_conditions %}
+        <option value="{{ code_type_condition }}">{{ libelle }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="type_comparaison">Type de comparaison</label>
+    <select name="type_comparaison" id="type_comparaison">
+      {% for code_type_comparaison, libelle in types_comparaisons %}
+        <option value="{{ code_type_comparaison }}">{{ libelle }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group div-valeur-comparaison">
+    <label for="valeur_comparaison">Valeur de comparaison</label>
+    <input type="text" id="valeur_comparaison" name="valeur_comparaison" class="form-control" placeholder="Valeur à comparer">
+  </div>
+  <button class="btn btn-success w-100" type="submit">
+    {% if cible == 'page' %}
+      <i class="fa fa-plus-circle fa-fw"></i>Ajouter une nouvelle condition sur cette page
+    {% else %}
+      <i class="fa fa-plus-circle fa-fw"></i>Ajouter une nouvelle condition sur ce bloc
+    {% endif %}
+  </button>
+</form>
+
+<script>
+  $("select[name='type_comparaison']").change(function(){
+    var typeCondition = $(this).val();
+    if (typeCondition === 'is_null' || typeCondition === 'is_not_null'){
+      $(".div-valeur-comparaison").addClass('d-none');
+    } else {
+      $(".div-valeur-comparaison").removeClass('d-none');
+    }
+  });
+</script>

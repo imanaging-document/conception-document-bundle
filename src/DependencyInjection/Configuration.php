@@ -14,6 +14,9 @@ class Configuration implements ConfigurationInterface
     $rootNode
       ->children()
         ->variableNode('output_path')->defaultValue('%kernel.project_dir%/public')->info('Output directory for generated files (pdf, png, jpg)')->end()
+        ->variableNode('upload_path')->defaultValue('%kernel.project_dir%/public/upload/conception-document')->info('Upload directory for images')->end()
+        ->variableNode('base_path')->defaultValue('base.html.twig')->info('Twig base file')->end()
+        ->variableNode('wkhtmltopdf_path')->defaultValue('wkhtmltopdf')->info('WKHTMLTOPDF path')->end()
       ->end()
     ;
     return $treeBuilder;

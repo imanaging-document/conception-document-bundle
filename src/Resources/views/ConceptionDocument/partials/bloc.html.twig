@@ -1,0 +1,18 @@
+<style>
+  {{ bloc.css|raw }}
+</style>
+{% if bloc.type.code == 'bloc_image' %}
+  <img id="{{ bloc.code }}" alt="logo-client" src="{{ getImageBinary(bloc.path) }}" class="bloc-element" data-bloc-id="{{ bloc.id }}" />
+{% elseif bloc.type.code == 'bloc_texte' %}
+  <div id="{{ bloc.code }}" class="bloc-element" data-bloc-id="{{ bloc.id }}">
+    {% if bloc.modeRaw %}
+      {{ personnalizeText(bloc.texte, conception_document)|raw }}
+    {% else %}
+      {{ personnalizeText(bloc.texte, conception_document) }}
+    {% endif %}
+  </div>
+{% elseif bloc.type.code == 'formes_predefinies' %}
+  <div id="{{ bloc.code }}" class="bloc-element" data-bloc-id="{{ bloc.id }}"></div>
+{% else %}
+  {{ renderBloc(bloc, conception_document)|raw }}
+{% endif %}

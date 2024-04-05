@@ -25,6 +25,14 @@ class ImanagingConceptionDocumentExtension extends Extension
     $config = $this->processConfiguration($configuration, $configs);
     $definition = $container->getDefinition('imanaging_conception_document.conception_document');
     $definition->setArgument(1, $config['output_path']);
+    $definition->setArgument(2, $config['wkhtmltopdf_path']);
+
+    $definition = $container->getDefinition('imanaging_conception_document.conception_document_controller');
+    $definition->setArgument(3, $config['upload_path']);
+    $definition->setArgument(4, $config['base_path']);
+
+    $definition = $container->getDefinition('imanaging_conception_document.twig_functions');
+    $definition->setArgument(1, $config['upload_path']);
   }
 
   public function getAlias() : string

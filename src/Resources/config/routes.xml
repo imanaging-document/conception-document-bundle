@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<routes xmlns="http://symfony.com/schema/routing"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://symfony.com/schema/routing
+        https://symfony.com/schema/routing/routing-1.0.xsd">
+
+    <route id="conception_document" path="/conceptions">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::index</default>
+    </route>
+
+    <route id="conception_document_add" path="/conceptions/new">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::add</default>
+    </route>
+
+    <route id="conception_document_remove" path="/conception/{id}/remove">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::remove</default>
+    </route>
+
+    <route id="conception_document_upload_yaml" path="/conception/{id}/upload-yaml">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::uploadYaml</default>
+    </route>
+
+    <route id="conception_document_show_import_modal" path="/conception/{id}/show-import-modal">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::showImportModal</default>
+    </route>
+
+    <route id="conception_document_import_yaml" path="/conception/{id}/import-yaml">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::importYaml</default>
+    </route>
+
+    <route id="conception_document_select_entity" path="/conception/{id}/select-entity">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::selectEntity</default>
+    </route>
+
+    <route id="conception_document_show_search_entity_form" path="/conception/{id}/show-search-entity-form">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::showSearchEntityForm</default>
+    </route>
+
+    <route id="conception_document_validate_entity_selection" path="/conception/{id}/validate-entity-selection">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::validateEntitySelection</default>
+    </route>
+
+    <route id="conception_document_conception_tool" path="/conception/{id}/entity/{entityId}/page/{pageNumber}/conception-tool">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::conceptionTool</default>
+    </route>
+
+    <route id="conception_document_conception_tool_add_page" path="/conception/{id}/entity/{entityId}/add-page">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::addPage</default>
+    </route>
+
+    <route id="conception_document_conception_tool_remove_page" path="/conception/entity/{entityId}/page/{id}/remove">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::removePage</default>
+    </route>
+
+    <route id="conception_document_conception_tool_page_preview" path="/conception/{id}/entity/{entityId}/page/{pageNumber}/preview">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::pagePreview</default>
+    </route>
+
+    <route id="conception_document_conception_tool_gestion_des_blocs" path="/conception/{id}/entity/{entityId}/page/{pageNumber}/gestion-des-blocs">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::gestionDesBlocs</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_add" path="/conception/page/{pageId}/entity/{entityId}/bloc/add">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::addBloc</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_remove" path="/conception/page/{pageId}/entity/{entityId}/bloc/{blocId}/remove">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::removeBloc</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_duplicate" path="/conception/page/{pageId}/entity/{entityId}/bloc/{blocId}/duplicate">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::duplicateBloc</default>
+    </route>
+
+    <route id="conception_document_conception_tool_save_blocs_order" path="/conception/page/{pageId}/save-blocs-order">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocsOrder</default>
+    </route>
+
+    <route id="conception_document_conception_tool_load_type_bloc_partial" path="/conception/type-bloc/load-partial">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::loadTypeBlocPartial</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_save_position" path="/conception/page/bloc/save-position">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocPosition</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_load_edition" path="/conception/bloc/{id}/entity/{entityId}/load-edition">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::loadBlocEdition</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_save_libelle" path="/conception/bloc/save-libelle">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocLibelle</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_save_text" path="/conception/bloc/save-text">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocText</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_save_mode_raw" path="/conception/bloc/save-mode-raw">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocModeRaw</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_save_style" path="/conception/bloc/save-style">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocStyle</default>
+    </route>
+
+    <route id="conception_document_conception_tool_save_multi_blocs" path="/conception/save-multi-blocs">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveMultiBlocs</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_add_condition" path="/conception/bloc/{id}/entity/{entityId}/add-condition">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::addConditionToBloc</default>
+    </route>
+
+    <route id="conception_document_conception_tool_page_add_condition" path="/conception/page/{id}/entity/{entityId}/add-condition">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::addConditionToPage</default>
+    </route>
+
+    <route id="conception_document_conception_tool_remove_condition" path="/conception/condition/{id}/entity/{entityId}/remove">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::removeCondition</default>
+    </route>
+
+    <route id="conception_document_conception_tool_check_page_integrity" path="/conception/page/{id}/integrity/check">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::checkPageIntegrity</default>
+    </route>
+
+    <route id="conception_document_conception_tool_generate_pdf" path="/conception/{id}/entity/{entityId}/generate-pdf">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::generatePdf</default>
+    </route>
+</routes>

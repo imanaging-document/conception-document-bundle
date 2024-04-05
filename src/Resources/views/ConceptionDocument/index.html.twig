@@ -1,0 +1,143 @@
+{% extends basePath %}
+
+{% block body %}
+  <style>
+      table.table-conception-document{
+          font-family: sans-serif;
+          border-collapse: collapse;
+          font-size: 1em;
+          font-weight: 500;
+          width: 100%;
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+          margin-bottom: 15px;
+      }
+
+      table.table-conception-document thead tr {
+          background-color: #007bff;
+          color: #ffffff;
+          text-align: left;
+      }
+
+      table.table-conception-document th,
+      table.table-conception-document td {
+          padding: 12px 8px;
+      }
+
+      table.table-conception-document th{
+          white-space: nowrap;
+      }
+
+      table.table-conception-document tbody tr {
+          border-bottom: 1px solid #dddddd;
+      }
+
+      table.table-conception-document tbody tr:last-of-type {
+          border-bottom: 2px solid #007bff;
+      }
+  </style>
+
+  <div class="container">
+    <h4 class="mt-2">Liste des conceptions</h4>
+
+    <table class="table-conception-document">
+      <thead>
+        <tr>
+          <td>#</td>
+          <td>Libellé</td>
+          <td>Type</td>
+          <td>Cible</td>
+          <td>Actif</td>
+          <td>Exporter</td>
+          <td>Importer</td>
+          <td><i class="fa fa-pencil fa-lg"></i></td>
+          <td><i class="fa fa-trash-o fa-lg"></i></td>
+        </tr>
+      </thead>
+      <tbody>
+        {% for conception in conceptions %}
+          <tr>
+            <td>{{ conception.id }}</td>
+            <td>{{ conception.libelle }}</td>
+            <td>{{ conception.type.libelle }}</td>
+            <td>{{ conception.type.targetEntity }}</td>
+            <td>
+              {% if conception.actif %}
+                <i class="fa fa-check-circle fa-lg text-success"></i>
+              {% else %}
+                <i class="fa fa-times-circle fa-lg text-danger"></i>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ path('conception_document_upload_yaml', {id: conception.id}) }}">
+                <i class="fa fa-upload fa-lg text-primary"></i>
+              </a>
+            </td>
+            <td>
+              <i class="fa fa-download fa-lg text-primary pointer show-modal-import"
+                 data-url="{{ path('conception_document_show_import_modal', {id: conception.id}) }}"></i>
+            </td>
+            <td>
+              <a href="{{ path('conception_document_select_entity', {id: conception.id}) }}">
+                <i class="fa fa-pencil fa-lg"></i>
+              </a>
+            </td>
+            <td>
+              <a href="{{ path('conception_document_remove', {id: conception.id}) }}">
+                <i class="fa fa-trash-o fa-lg text-danger"></i>
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div>
+      <form action="{{ path('conception_document_add') }}" method="post">
+        <div class="form-group">
+          <label for="libelle">Nom de la conception</label>
+          <input type="text" name="libelle" id="libelle" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="type">Type de conception</label>
+          <select name="type" id="type" class="form-control">
+            {% for type in types %}
+              <option value="{{ type.id }}">{{ type.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="text-center">
+          <button type="submit" class="btn btn-success w-100">
+            <i class="fa fa-plus-circle fa-fw"></i>Ajouter une conception
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div id="divModalImportYaml"></div>
+  </div>
+
+  <script>
+    $(".show-modal-import").click(function(){
+      var url = $(this).data('url');
+      $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (data) {
+          $("#divModalImportYaml").html(data);
+          $("#importerConceptionModal").modal();
+        },
+        error: function (data){
+          var errorMessage;
+          if (data.responseJSON !== undefined) {
+            errorMessage = data.responseJSON.error_message;
+          } else {
+            errorMessage = 'Une erreur est survenu lors du chargement de la cible.';
+          }
+          alert(errorMessage);
+        }
+      });
+    });
+  </script>
+{% endblock %}

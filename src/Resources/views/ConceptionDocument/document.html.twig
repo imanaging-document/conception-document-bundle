@@ -1,0 +1,32 @@
+{% block body %}
+  <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap');
+  </style>
+
+  <head>
+    <title>Quittance</title>
+    <meta charset="UTF-8" />
+  </head>
+
+  <body>
+  {% for bloc in page.blocs %}
+    {% if canShowBloc(bloc.getConditions(), conception_document) %}
+      {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/bloc.html.twig' with {'bloc' : bloc, 'preshow': preshow} %}
+    {% endif %}
+  {% endfor %}
+  </body>
+
+  {% if preshow %}
+    <script>
+      $(".bloc-element").each(function(){
+        dragElement(document.getElementById($(this).prop('id')));
+      });
+
+      $(".bloc-element").contextmenu(function(e){
+        e.preventDefault();
+        askPosition($(this));
+      });
+    </script>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends basePath %}
+
+{% block body %}
+  <div class="container">
+    <h4 class="mt-2">{{ template.libelle }} - Séléction de l'item de personnalisation</h4>
+
+    <form id="formSearchEntity" action="{{ path('conception_document_validate_entity_selection', {id: template.id}) }}" method="post">
+      <div id="divSearchItemForm" class="mt-2 mb-2">
+        <button type="button" id="btnShowSearchItemForm" class="btn btn-primary"><i class="fa fa-search fa-fw"></i>Rechercher un item de personnalisation</button>
+      </div>
+
+      <div>
+        <b>OU</b>
+      </div>
+
+      <div class="form-group">
+        <label for="id"># Identifiant unique</label>
+        <input type="number" id="id" class="form-control" name="id">
+      </div>
+
+      <button type="submit" class="btn btn-success">
+        Valider
+      </button>
+    </form>
+  </div>
+
+  <script>
+    $("#btnShowSearchItemForm").click(function(){
+      $("#divSearchItemForm").html('<i class="fa fa-spinner fa-spin fa-fw"></i>Chargement du formulaire de recherche en cours ..');
+      $.ajax({
+        url: "{{ path('conception_document_show_search_entity_form', {id: template.id}) }}",
+        type: 'GET',
+        success: function (data) {
+          $("#divSearchItemForm").html(data);
+        },
+        error: function (data){
+          var errorMessage;
+          if (data.responseJSON !== undefined) {
+            errorMessage = data.responseJSON.error_message;
+          } else {
+            errorMessage = 'Une erreur inconnue est survenue.';
+          }
+          $("#divSearchItemForm").html(errorMessage);
+        }
+      });
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,929 @@
+{% block body %}
+  <script
+    src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" integrity="sha512-uto9mlQzrs59VwILcLiRYeLKPPbS/bT71da/OEBYEwcdNUk8jYIy+D176RYoop1Da+f9mvkYrmj5MCLZWEtQuA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" integrity="sha512-aOG0c6nPNzGk+5zjwyJaoRUgCdOrfSDhmMID2u4+OIslr0GjpLKo7Xm0Ao3xmpM4T8AmIouRkqwj1nrdVsLKEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+      body{
+          margin: 0;
+          padding: 0;
+          display: block;
+          /*background: #2A8264;*/
+      }
+
+      .btn-group{
+          position: relative;
+          display: -webkit-inline-box;
+          display: -ms-inline-flexbox;
+          display: inline-flex;
+          vertical-align: middle;
+      }
+
+      .btn{
+          display: inline-block;
+          font-weight: 400;
+          color: #212529;
+          text-align: center;
+          vertical-align: middle;
+          background-color: transparent;
+          border: 1px solid transparent;
+          padding: 0.375rem 0.75rem;
+          cursor: pointer;
+          text-decoration: none;
+      }
+
+      .btn:disabled{
+          opacity: .6;
+          cursor: default;
+      }
+
+      .btn-primary {
+          color: #fff;
+          background-color: #007bff;
+          border-color: #007bff;
+      }
+
+      .btn-primary:hover {
+          background-color: #0f72dc;
+      }
+
+      .btn-success {
+          color: #fff;
+          background-color: #28a745;
+          border-color: #28a745;
+      }
+
+      .btn-success:hover {
+          background-color: #0bd53b;
+      }
+
+      #preview
+      {
+          width:21cm;
+          height:29.7cm;
+          background: white;
+          box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6);
+      }
+
+      #help
+      {
+          position: absolute;
+          right: 100px;
+          top: 10px;
+          width: 45%;
+          font-family: "Arial", Arial, serif;
+      }
+
+      .text-white{
+          color: white;
+      }
+
+      .pointer
+      {
+          cursor: pointer;
+      }
+
+      .custom-table{
+          font-family: Arial, Helvetica, sans-serif;
+          border-collapse: collapse;
+          width: 100%;
+      }
+
+      .custom-table td, .custom-table th {
+          border: 1px solid #ddd;
+          padding: 8px;
+      }
+
+      .custom-table tr{background-color: #f2f2f2;}
+
+      .custom-table tr.hold-highlight{background-color: deeppink; color: white;}
+
+      .custom-table th {
+          padding-top: 12px;
+          padding-bottom: 12px;
+          text-align: left;
+          background-color: #04AA6D;
+          color: white;
+      }
+
+      .d-none{
+          display: none;
+      }
+
+      .mt-4{
+          margin-top: 20px;
+      }
+
+      .mt-3{
+          margin-top: 15px;
+      }
+
+      .mt-2{
+          margin-top: 10px;
+      }
+
+      .mt-1{
+          margin-top: 5px;
+      }
+
+      .text-success{
+          color: #28a745;
+      }
+
+      .text-danger{
+          color: orangered;
+      }
+
+      .text-center{
+          text-align: center;
+      }
+
+      .remove-property{
+          color: orangered;
+          margin-left: 10px;
+          cursor: pointer;
+      }
+
+      .remove-property:hover{
+          color: red;
+      }
+
+      input[type=text], select {
+          width: 100%;
+          padding: 6px 10px;
+          margin: 8px 0;
+          display: inline-block;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          box-sizing: border-box;
+      }
+
+      .btn-new-property, .btn-save-bloc-style{
+          width: 100%;
+          background-color: #28a745;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+      }
+
+      .btn-new-property:hover, .btn-save-bloc-style:hover{
+          background-color: #45a049;
+      }
+
+      .btn-new-bloc{
+          width: 100%;
+          background-color: #28a745;
+          color: white;
+          padding: 7px 10px;
+          margin: 8px 0;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+      }
+
+      .btn-new-bloc:hover{
+          background-color: #45a049;
+      }
+
+      .alert.alert-success{
+          padding: 20px;
+          background-color: #28a745;
+          color: white;
+      }
+
+      .alert.alert-danger{
+          padding: 20px;
+          background-color: #f44336;
+          color: white;
+      }
+
+      .text-info{
+          color: #0f74a8;
+      }
+
+      .w-100{
+          width: 100%;
+      }
+
+      .mt-4 {
+          margin-top: 1.5rem !important;
+      }
+
+      .mb-4 {
+          margin-bottom: 1.5rem !important;
+      }
+
+      .pull-right{
+          position: relative;
+          text-align: right;
+      }
+
+      .no-highlight{
+          opacity: .3;
+      }
+
+      .highlight{
+          opacity: 1;
+      }
+
+      .no-hold-highlight{
+          opacity: .3;
+      }
+
+      .hold-highlight{
+          opacity: 1;
+      }
+
+      .container-verif-integrite{
+          padding: 10px;
+          background: #f1f1f1;
+          border: 2px solid #ccc;
+      }
+
+      .btn-verifier-integrite-page{
+          width: 100%;
+          cursor: pointer;
+          background-color: #642a82;
+          color: white;
+          padding: 7px 10px;
+          margin: 8px 0;
+          border: none;
+          border-radius: 4px;
+      }
+
+      .btn-verifier-integrite-page:hover{
+          background-color: #9652b9;
+      }
+
+      /* Style the tab */
+      .tab {
+          overflow: hidden;
+          border: 1px solid #ccc;
+          background-color: #f1f1f1;
+      }
+
+      /* Style the buttons that are used to open the tab content */
+      .tab button {
+          background-color: inherit;
+          float: left;
+          border: none;
+          outline: none;
+          cursor: pointer;
+          padding: 14px 16px;
+          transition: 0.3s;
+      }
+
+      /* Change background color of buttons on hover */
+      .tab button:hover {
+          background-color: #ddd;
+      }
+
+      /* Create an active/current tablink class */
+      .tab button.active {
+          background-color: #ccc;
+      }
+
+      /* Style the tab content */
+      .tabcontent, .main-tabcontent{
+          display: none;
+          padding: 20px;
+          border: 1px solid #ccc;
+          border-top: none;
+          background: white;
+      }
+
+      .tabcontent.active, .main-tabcontent.active{
+          display: block;
+      }
+
+      /* SLIDER */
+      /* The switch - the box around the slider */
+      .switch {
+          position: relative;
+          display: inline-block;
+          width: 30px;
+          height: 17px;
+      }
+
+      /* Hide default HTML checkbox */
+      .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+
+      /* The slider */
+      .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          -webkit-transition: .4s;
+          transition: .4s;
+      }
+
+      .slider:before {
+          position: absolute;
+          content: "";
+          height: 13px;
+          width: 13px;
+          left: 2px;
+          bottom: 2px;
+          background-color: white;
+          -webkit-transition: .4s;
+          transition: .4s;
+      }
+
+      input:checked + .slider {
+          background-color: #28a745;
+      }
+
+      input:focus + .slider {
+          box-shadow: 0 0 1px #28a745;
+      }
+
+      input:checked + .slider:before {
+          -webkit-transform: translateX(13px);
+          -ms-transform: translateX(13px);
+          transform: translateX(13px);
+      }
+
+      /* Rounded sliders */
+      .slider.round {
+          border-radius: 17px;
+      }
+
+      .slider.round:before {
+          border-radius: 50%;
+      }
+  </style>
+
+  <div id="preview">
+  </div>
+
+  <div id="help">
+
+    <a href="{{ path('conception_document') }}" class="btn btn-primary w-100">
+      <i class="fa fa-arrow-left fa-fw"></i>Revenir à la liste des conceptions
+    </a>
+
+    <div class="btn-group mt-4">
+      {% for _page in page.template.pages %}
+        {% if _page.ordre != page.ordre %}
+          <a href="{{ path('conception_document_conception_tool', {id: page.template.id, entityId: entity_id, pageNumber: _page.ordre}) }}"
+             class="btn btn-primary" >
+            {{ _page.ordre }}
+          </a>
+        {% else %}
+          <button class="btn btn-primary" disabled>
+            {{ _page.ordre }}
+          </button>
+        {% endif %}
+      {% endfor %}
+      <a href="{{ path('conception_document_conception_tool_add_page', {id: page.template.id, entityId: entity_id}) }}" class="btn btn-success">
+        <i class="fa fa-plus-circle fa-lg"></i>
+      </a>
+    </div>
+
+    <div id="gestion-des-blocs" class="w-100">
+    </div>
+
+    {% for flashMessage in app.session.flashbag.get('success') %}
+      <div id="success" class="alert alert-success" role="alert">
+        {{ flashMessage|raw }}
+      </div>
+    {% endfor %}
+
+    {% for flashMessage in app.session.flashbag.get('error') %}
+      <div id="error" class="alert alert-danger" role="alert">
+        {{ flashMessage|raw }}
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    var pixelRatioToMm = 0.2645833333;
+    $(document).ready(function(){
+      loadPage();
+    });
+
+    function loadPage(){
+      loadPreview();
+      loadGestionDesBlocs();
+    }
+
+    function loadPreview(pageNumber){
+      $("#preview").html('<div><i class="fa fa-spinner fa-spin fa-fw fa-lg"></i>Chargement de la prévisualisation de la page '+pageNumber+' en cours ...</div>');
+      $.ajax({
+        url: "{{ path('conception_document_conception_tool_page_preview', {id: page.template.id, entityId: entity_id, pageNumber: page.ordre}) }}",
+        type: 'GET',
+        success: function (data) {
+          $("#preview").html(data);
+        },
+        error: function () {
+          $("#preview").html('Une erreur est survenue lors du chargement de la page '+pageNumber).addClass('text-danger');
+        }
+      });
+    }
+
+    function loadGestionDesBlocs(pageNumber){
+      $("#gestion-des-blocs").html('<div class="text-white mt-4"><i class="fa fa-spinner fa-spin fa-fw fa-lg"></i>Chargement de la gestion de la page '+pageNumber+' en cours ...</div>');
+      $.ajax({
+        url: "{{ path('conception_document_conception_tool_gestion_des_blocs', {id: page.template.id, entityId: entity_id, pageNumber: page.ordre}) }}",
+        type: 'GET',
+        success: function (data) {
+          $("#gestion-des-blocs").html(data);
+        },
+        error: function () {
+          $("#gestion-des-blocs").html('Une erreur est survenue lors du chargement de la page '+pageNumber).addClass('text-danger');
+        }
+      });
+    }
+
+    $(document).keydown(function(e){
+      $div = $(".bloc-element.hold-highlight");
+      if ($div.length){
+        switch (e.which) {
+          case 13:
+            var position = $div.position();
+            var leftMm = position.left * pixelRatioToMm;
+            var topMm = position.top * pixelRatioToMm;
+            var fontSize = $div.css('font-size');
+            var width = parseInt($div.css('width').slice(0, -2)) * pixelRatioToMm;
+            var height = parseInt($div.css('height').slice(0, -2)) * pixelRatioToMm;
+            updateAndSavePosition($div, leftMm, topMm, height, width, fontSize);
+            $(".bloc-element").removeClass('no-hold-highlight').removeClass('hold-highlight');
+            $(".bloc-row").removeClass('hold-highlight');
+            break;
+          case 37:
+            e.preventDefault();
+            $div.css('left', $div.offset().left - 1);
+            break;
+          case 38:
+            e.preventDefault();
+            $div.css('top', $div.offset().top - 1);
+            break;
+          case 39:
+            e.preventDefault();
+            $div.css('left', $div.offset().left + 1);
+            break;
+          case 40:
+            e.preventDefault();
+            $div.css('top', $div.offset().top + 1);
+            break;
+          case 100:
+            e.preventDefault();
+            $div.css('width', (parseInt($div.css('width').slice(0, -2)) * pixelRatioToMm) - 1 + 'mm');
+            break;
+          case 102:
+            e.preventDefault();
+            $div.css('width', (parseInt($div.css('width').slice(0, -2)) * pixelRatioToMm) + 1 + 'mm');
+            break;
+          case 104:
+            e.preventDefault();
+            $div.css('height', (parseInt($div.css('height').slice(0, -2)) * pixelRatioToMm) + 1 + 'mm');
+            break;
+          case 98:
+            e.preventDefault();
+            $div.css('height', (parseInt($div.css('height').slice(0, -2)) * pixelRatioToMm) - 1 + 'mm');
+            break;
+          case 109:
+            e.preventDefault();
+            $div.css('font-size', parseInt($div.css('font-size').slice(0, -2))-1 + 'px');
+            break;
+          case 107:
+            e.preventDefault();
+            $div.css('font-size', parseInt($div.css('font-size').slice(0, -2))+1 + 'px');
+            break;
+        }
+      }
+    });
+
+    $(document).on('click', '.bloc-row', function(){
+      var blocCode = $(this).data('bloc-code');
+      if (!$(this).hasClass('hold-highlight')){
+        $(".bloc-element").addClass('no-hold-highlight').removeClass('hold-highlight');
+        $(".bloc-row").removeClass('hold-highlight');
+        $(this).addClass('hold-highlight');
+        $("#"+blocCode).addClass('hold-highlight');
+      } else {
+        $(".bloc-element").removeClass('no-hold-highlight').removeClass('hold-highlight');
+        $(".bloc-row").removeClass('hold-highlight');
+      }
+    });
+
+    $(document).on('mouseenter', '.bloc-row', function(){
+      $(".bloc-element").addClass('no-highlight');
+      var blocCode = $(this).data('bloc-code');
+      $("#"+blocCode).addClass('highlight');
+    });
+
+    $(document).on('mouseleave', '.bloc-row', function(){
+      $(".bloc-element").removeClass('no-highlight');
+      var blocCode = $(this).data('bloc-code');
+      $("#"+blocCode).removeClass('highlight');
+    });
+
+    $(document).on('change', '#type_bloc', function(){
+      $("#div-type-bloc-data").html('<i class="fa fa-spinner fa-spin fa-fw"></i>Chargement en cours ...')
+      $.ajax({
+        url: "{{ path('conception_document_conception_tool_load_type_bloc_partial') }}",
+        type: 'POST',
+        data: {typeBloc: $(this).val()},
+        success: function (data) {
+          $("#div-type-bloc-data").html(data);
+        },
+        error: function () {
+          $("#div-type-bloc-data").html('Une erreur est survenue lors du chargement de ce type de bloc').addClass('text-danger');
+        }
+      });
+    });
+
+    $(document).on('click', '.edit-bloc', function(){
+      $("#loader-edit-bloc").removeClass('d-none');
+      var urlEdition = $(this).data('url-edition');
+      $.ajax({
+        url: urlEdition,
+        type: 'GET',
+        success: function (data) {
+          $("#div-edit-bloc").html(data);
+        },
+        error: function () {
+          $("#div-edit-bloc").html('Une erreur est survenue lors du chargement du bloc !').addClass('text-danger');
+        },
+        complete: function(){
+          $("#loader-edit-bloc").addClass('d-none');
+        }
+      });
+    });
+
+    $(document).on('click', '#cbx-select-all-blocs', function(){
+      $('.cbx-bloc').prop('checked', $(this).prop('checked'));
+      updateVisibiliteMultiBlocs();
+    });
+
+    $(document).on('click', '.cbx-bloc', function(){
+      updateVisibiliteMultiBlocs();
+    });
+
+    function updateVisibiliteMultiBlocs(){
+      var selectedCbx = $('.cbx-bloc:checked');
+      if (selectedCbx.length > 1){
+        $("#span-nb-blocs-selected").html(selectedCbx.length);
+        $("#div-multi-rows").removeClass('d-none');
+      } else {
+        $("#div-multi-rows").addClass('d-none');
+      }
+    }
+
+    $(document).on('click', '#btn-valider-action-multi-blocs', function(){
+      var typeAction = $("#action_to_multi_blocs").val();
+      var nbMmToMove = $("#nb_mm_to_move").val();
+      var blocsIds = [];
+      $('.cbx-bloc:checked').each(function(){
+        blocsIds.push($(this).data('bloc-id'));
+      });
+      var data = {blocs_ids: blocsIds, type_action: typeAction, nb_mm_to_move: nbMmToMove};
+      $.ajax({
+        url: "{{ path('conception_document_conception_tool_save_multi_blocs') }}",
+        type: 'POST',
+        data: data,
+        success: function (data) {
+          location.reload();
+        },
+        error: function (data) {
+          if (data.responseJSON !== undefined){
+            $("#error-multi-blocs").html(data.responseJSON.error_message);
+          } else {
+            $("#error-multi-blocs").html('Une erreur inconnue est survenue');
+          }
+        }
+      });
+    });
+
+    $(document).on('click', '.main-tablinks', function(){
+      $(".main-tablinks").removeClass('active');
+      $(this).addClass('active');
+      $(".main-tabcontent").removeClass('active');
+      var tabTarget = $(this).data('tab-target');
+      $('#'+tabTarget).addClass('active');
+    });
+
+    $(document).on('click', '.tablinks', function(){
+      $(".tablinks").removeClass('active');
+      $(this).addClass('active');
+      $(".tabcontent").removeClass('active');
+      var tabTarget = $(this).data('tab-target');
+      $('#'+tabTarget).addClass('active');
+      window.scrollTo(0,document.body.scrollHeight);
+    });
+
+    $(document).on('click', '.btn-save-bloc-style', function(){
+      var styleId = $(this).data('style-id');
+      var properties = [];
+      $(".style-input[data-style-id='"+styleId+"']").each(function(){
+        var property = $(this).data('property');
+        properties[property] = $(this).val();
+      });
+
+      var jsonProperties = JSON.stringify(Object.assign({}, properties))
+      var data = {style_id: styleId, json_properties: jsonProperties};
+      $.ajax({
+        url: "{{ path('hephaistos_administration_quittance_conception_template_parametrage_bloc_save_style') }}",
+        type: 'POST',
+        data: data,
+        success: function (data) {
+          $("#div-save-style").html('Style enregistré avec succès !').removeClass('text-danger').addClass('text-success');
+          $("#div-edit-bloc").empty();
+          loadPreview(data.page_number);
+        },
+        error: function (data) {
+          $("#div-save-style").html('Une erreur est survenue lors de l\'enregistrement du style').addClass('text-danger').removeClass('text-success');
+        }
+      });
+    });
+
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000
+    });
+
+    function askPosition(element){
+      var position = element.position();
+      Swal.mixin({
+        input: 'text',
+        confirmButtonText: 'Suivant &rarr;',
+        showCancelButton: true,
+        progressSteps: ['1', '2', '3', '4', '5', '6']
+      }).queue([
+        {
+          title: 'Position X (horizontale)',
+          text: 'Distance, en millimètre, par rapport au bord gauche de la feuille',
+          inputValue: Math.floor(position.left * pixelRatioToMm)
+        },
+        {
+          title: 'Position Y (verticale)',
+          text: 'Distance, en millimètre, par rapport au bord supérieur de la feuille',
+          inputValue: Math.floor(position.top * pixelRatioToMm)
+        },
+        {
+          title: 'Taille de la police',
+          text: 'en pixel',
+          inputValue: element.css('font-size')
+        },
+        {
+          title: 'Hauteur',
+          text: 'Hauteur de l\'élément, en millimètre',
+          inputValue: Math.floor(element.height() * pixelRatioToMm)
+        },
+        {
+          title: 'Largeur',
+          text: 'Largeur de l\'élément, en millimètre',
+          inputValue: Math.floor(element.width() * pixelRatioToMm)
+        },
+        {
+          title: 'Opacité',
+          text: 'Opacité de l\'élément',
+          inputValue: element.css("opacity")
+        }
+      ]).then((result) => {
+        if (result.value) {
+          var newX = result.value[0];
+          var newY = result.value[1];
+          var fontSize = result.value[2];
+          var height = result.value[3];
+          var width = result.value[4];
+          var opacity = result.value[5];
+          updateAndSavePosition(element, newX, newY, height, width, opacity, fontSize);
+        }
+      })
+    }
+
+    function updateAndSavePosition(element, x, y, height, width, opacity, fontSize){
+      var blocId = element.data('bloc-id');
+      var data = {bloc_id: blocId, x: x, y: y, font_size: fontSize, height: height, width: width, opacity: opacity};
+      $.ajax({
+        url: "{{ path('conception_document_conception_tool_bloc_save_position') }}",
+        type: 'POST',
+        data: data,
+        success: function (data) {
+          element.css({left: data.x, top: data.y, height: data.height, width: data.width, opacity: data.opacity});
+          Toast.fire({
+            type: 'success',
+            title: 'Nouvelle position enregistrée :)'
+          });
+        },
+        error: function () {
+          Toast.fire({
+            type: 'error',
+            title: 'Une erreur est survenue lors de l\'enregistrement'
+          });
+        }
+      });
+    }
+
+    $(document).on('click', '#btn-new-property', function(){
+      var styleId = $(this).data('style-id');
+      Swal.mixin({
+        input: 'text',
+        confirmButtonText: 'Suivant &rarr;',
+        showCancelButton: true,
+        progressSteps: ['1', '2']
+      }).queue([
+        {
+          title: 'Propriété',
+          text: 'Nom de la propriété',
+          inputValue: ''
+        },
+        {
+          title: 'Valeur',
+          text: 'Valeur associée',
+          inputValue: ''
+        }
+      ]).then((result) => {
+        if (result.value) {
+          var property = result.value[0];
+          var value = result.value[1];
+          $('.div-properties[data-style-id="'+styleId+'"]').append('<div class="form-group"><label for="'+property+'">'
+            +property+'</label><input type="text" id="'+property+'" value="'+value+'" data-property="'+property+'" data-style-id="'+styleId+'" class="style-input"></div>')
+        }
+      })
+    });
+
+    $(document).on('mouseenter', '.bloc-element', function(){
+      var blocCode = $(this).data('bloc-code');
+      if (!$(this).hasClass('hold-highlight')){
+        $(".bloc-element").addClass('no-hold-highlight').removeClass('hold-highlight');
+        $(".bloc-row").removeClass('hold-highlight');
+        $(this).addClass('hold-highlight');
+      } else {
+        $(".bloc-element").removeClass('no-hold-highlight').removeClass('hold-highlight');
+        $(".bloc-row").removeClass('hold-highlight');
+      }
+    });
+
+    $(document).on('mouseleave', '.bloc-element', function(){
+      $(".bloc-element").removeClass('no-hold-highlight').removeClass('hold-highlight');
+    });
+
+    $(document).on('click', '.remove-property', function(){
+      $(this).closest('div.form-group').remove();
+    });
+
+    $(document).on('click', '.bloc-libelle-update', async function(){
+      var blocId = $(this).data('bloc-id');
+      var libelle = $(this).data('libelle');
+
+      const { value: newLibelle } = await Swal.fire({
+        title: 'Entrer le nouveau libellé',
+        input: 'text',
+        inputLabel: 'Libellé',
+        inputValue: libelle,
+        showCancelButton: true,
+        inputValidator: (value) => {
+          if (!value) {
+            return 'Vous devez saisir un texte'
+          }
+        }
+      });
+
+      if (newLibelle) {
+        var data = {bloc_id: blocId, libelle: newLibelle};
+        $.ajax({
+          url: "{{ path('conception_document_conception_tool_bloc_save_libelle') }}",
+          type: 'POST',
+          data: data,
+          success: function () {
+            $(".bloc-libelle-data[data-bloc-id='"+blocId+"']").html(newLibelle);
+          },
+          error: function () {
+
+          }
+        });
+      }
+    });
+
+    $(document).on('click', '.bloc-texte-update', async function(){
+      var blocId = $(this).data('bloc-id');
+      var texte = $(this).data('texte');
+
+      const { value: newTexte } = await Swal.fire({
+        title: 'Entrer le nouveau texte',
+        input: 'text',
+        inputLabel: 'Texte',
+        inputValue: texte,
+        showCancelButton: true,
+        inputValidator: (value) => {
+          if (!value) {
+            return 'Vous devez saisir un texte'
+          }
+        }
+      });
+
+      if (newTexte) {
+        var data = {bloc_id: blocId, texte: newTexte};
+        $.ajax({
+          url: "{{ path('conception_document_conception_tool_bloc_save_text') }}",
+          type: 'POST',
+          data: data,
+          success: function () {
+            $(".bloc-texte-data[data-bloc-id='"+blocId+"']").html(newTexte);
+          },
+          error: function () {
+
+          }
+        });
+      }
+    });
+
+    $(document).on('click', '.cbx-mode-raw', function(){
+      let thisCbx = $(this);
+      var label = $(this).closest('label.switch');
+      label.addClass('fa-spin');
+      var blocId = $(this).data('bloc-id');
+      var checked = $(this).prop('checked');
+      var data = {bloc_id: blocId, mode_raw: checked};
+      $.ajax({
+        url: "{{ path('conception_document_conception_tool_bloc_save_mode_raw') }}",
+        type: 'POST',
+        data: data,
+        success: function () {
+
+        },
+        error: function () {
+          thisCbx.prop('checked', !checked);
+        },
+        complete: function() {
+          label.removeClass('fa-spin');
+        }
+      });
+    });
+
+    $(document).on('click', '.btn-verifier-integrite-page', function(){
+      $("#div-result-verif-integrite").html('<div class="text-center"><i class="fa fa-spinner fa-spin fa-fw"></i>Réalisation du check d\'intégrité en cours ...</div>');
+      $.ajax({
+        url: "{{ path('conception_document_conception_tool_check_page_integrity',{id: page.id}) }}",
+        type: 'GET',
+        success: function (data) {
+          $("#div-result-verif-integrite").html(data);
+        },
+        error: function () {
+          $("#div-result-verif-integrite").html('Une erreur est survenue lors de la réalisation du check d\'intégrité ...');
+        }
+      });
+    });
+
+    function dragElement(elmnt) {
+      var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      elmnt.ondblclick = dragMouseDown;
+
+      function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // get the mouse cursor position at startup:
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        // call a function whenever the cursor moves:
+        document.onmousemove = elementDrag;
+      }
+
+      function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // calculate the new cursor position:
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        // set the element's new position:
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+      }
+
+      function closeDragElement() {
+        // stop moving when mouse button is released:
+        document.onmouseup = null;
+        document.onmousemove = null;
+        var element = $("#"+elmnt.id);
+        var position = element.position();
+        var leftMm = position.left * pixelRatioToMm;
+        var topMm = position.top * pixelRatioToMm;
+        updateAndSavePosition(element, leftMm, topMm);
+      }
+    }
+  </script>
+{% endblock %}

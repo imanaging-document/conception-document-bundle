@@ -1,0 +1,28 @@
+{
+    "name": "imanaging-document/conception-document-bundle",
+    "description": "Bundle de conception documentaire",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Imanaging\\ConceptionDocumentBundle\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Rémi Zanzi",
+            "email": "r.zanzi@imanaging-document.fr"
+        },
+        {
+            "name": "Antonin Auffray",
+            "email": "a.auffray@imanaging-document.fr"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "doctrine/orm": "^2.8",
+        "symfony/framework-bundle": "6.*",
+        "symfony/templating": "6.*",
+        "symfony/twig-bundle": "6.*"
+    }
+}

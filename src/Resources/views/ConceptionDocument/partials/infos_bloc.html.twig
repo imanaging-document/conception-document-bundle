@@ -1,0 +1,134 @@
+<h4 class="text-info">Informations générales</h4>
+<div>
+  Libellé du bloc : <b class="bloc-libelle-data" data-bloc-id="{{ bloc.id }}">{{ bloc.libelle }}</b>
+  <span class="bloc-libelle-update" data-bloc-id="{{ bloc.id }}" data-libelle="{{ bloc.libelle }}"><i class="fa fa-pen text-info pointer"></i></span>
+</div>
+<hr>
+{% if bloc.type.code == 'bloc_image' %}
+  <div>
+    Type : <b>Image</b>
+  </div>
+  <hr>
+  <div>
+    Image :
+  </div>
+  <hr>
+  <div>
+    <img src="{{ getImageBinary(bloc.path) }}" alt="image" style="width: 100px; margin-top: 10px;">
+  </div>
+{% elseif bloc.type.code == 'bloc_texte' %}
+  <div>
+    Type :  <b>Texte</b>
+  </div>
+  <hr>
+  <div>
+    Mode RAW <small>(Le mode raw permet d'interpréter le code HTML)</small>
+    <div>
+      <label class="switch">
+        <input class="cbx-mode-raw" data-bloc-id="{{ bloc.id }}" type="checkbox" {% if bloc.modeRaw %}checked{% endif %}>
+        <span class="slider round"></span>
+      </label>
+    </div>
+  </div>
+  <hr>
+  <div>
+    Texte : <b class="bloc-texte-data" data-bloc-id="{{ bloc.id }}">{{ bloc.texte }}</b>
+    <span class="bloc-texte-update" data-bloc-id="{{ bloc.id }}" data-texte="{{ bloc.texte }}"><i class="fa fa-pen text-info pointer"></i></span>
+  </div>
+  <hr>
+{% elseif bloc.type.code == 'bloc_tableau_rubriques' %}
+  <div>
+    Type : <b>Tableau de rubriques</b>
+  </div>
+  <hr>
+  <div>
+    Nombre de rubriques maximum :
+    {% if bloc.nbRubriquesMax is not null %}
+      <b>{{ bloc.nbRubriquesMax }}</b>
+    {% else %}
+      <b>Non défini</b>
+    {% endif %}
+  </div>
+  <hr>
+{% else %}
+  <div>
+    Type de bloc non géré nativement : <b>{{ bloc.type.code }}</b>
+  </div>
+{% endif %}
+
+<div id="properties-div">
+  <div class="tab">
+    <button id="default-style" class="tablinks" data-tab-target="bloc-conditions"><i class="fa fa-question-circle fa-fw"></i>Conditions</button>
+    {% for style in bloc.styles %}
+      <button class="tablinks" data-tab-target="{{ style.id }}"><i class="fa fa-paint-brush fa-fw"></i>{{ style.nom }}</button>
+    {% endfor %}
+  </div>
+
+  <div id="bloc-conditions" class="tabcontent">
+    {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/conditions.html.twig' with {'conditions': bloc.conditions, 'cible': 'bloc', 'bloc_id': bloc.id } %}
+  </div>
+  {% for style in bloc.styles %}
+    <!-- Tab content -->
+    <div id="{{ style.id }}" class="tabcontent">
+      <h3>{{ style.nom }}</h3>
+
+      <button id="btn-new-property" type="button" data-style-id="{{ style.id }}">
+        <i class="fa fa-plus-circle fa-fw"></i>Nouvelle propriété
+      </button>
+
+      <div class="div-properties" data-style-id="{{ style.id }}">
+        {% for property, value in style.decodedStyle %}
+          <div class="form-group">
+            <label for="{{ property }}">{{ property }}</label><i class="fa fa-trash remove-property"></i>
+            <input type="text" id="{{ property }}" value="{{ value }}" data-property="{{ property }}" class="style-input" data-style-id="{{ style.id }}">
+          </div>
+        {% endfor %}
+      </div>
+
+      <button class="btn-save-bloc-style" type="button" data-style-id="{{ style.id }}">
+        <i class="fa fa-save fa-fw"></i>Enregistrer
+      </button>
+    </div>
+  {% endfor %}
+</div>
+
+<style>
+  input[type=text]{
+    width: 100%;
+    padding: 10px 20px;
+    margin: 8px 0;
+    box-sizing: border-box;
+  }
+
+  input[type=text]:focus{
+    background-color: lightyellow;
+  }
+
+  #btn-new-property{
+    font-family: "Open Sans", sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-decoration: none;
+    text-transform: uppercase;
+    color: #28a745;
+    cursor: pointer;
+    border: 2px solid;
+    padding: 0.25em 0.5em;
+    box-shadow: 0px 0px 0px 0px, 1px 1px 0px 0px, 2px 2px 0px 0px, 3px 3px 0px 0px, 4px 4px 0px 0px;
+    position: relative;
+    margin-bottom: 20px;
+    background: white;
+    transition: color 200ms ease;
+  }
+
+  #btn-new-property:hover{
+    color: white;
+    background: #28a745;
+  }
+</style>
+
+<script>
+  $(document).ready(function(){
+    $("#default-style").trigger('click');
+  });
+</script>
