@@ -640,7 +640,7 @@
       var jsonProperties = JSON.stringify(Object.assign({}, properties))
       var data = {style_id: styleId, json_properties: jsonProperties};
       $.ajax({
-        url: "{{ path('hephaistos_administration_quittance_conception_template_parametrage_bloc_save_style') }}",
+        url: "{{ path('conception_document_conception_tool_bloc_save_style') }}",
         type: 'POST',
         data: data,
         success: function (data) {
