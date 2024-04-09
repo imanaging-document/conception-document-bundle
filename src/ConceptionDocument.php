@@ -53,11 +53,13 @@ class ConceptionDocument
    * @throws SyntaxError
    */
   public function genererPdf(ConceptionDocumentInterface $conceptionDocument, ConceptionTemplateInterface $conceptionTemplate, bool $sandBox=false){
-    if (!is_dir($this->outputPath)){
-      mkdir($this->outputPath, 0755, true);
-    }
-
     $filePath = $this->outputPath.'/'.$conceptionDocument->getConceptionDocumentPdfFilename($sandBox);
+
+    $dir = dirname($filePath);
+    if (!is_dir($dir)){
+      mkdir($dir, 0755, true);
+    }
+    
     if (!file_exists($filePath)){
       $options = [
         'no-outline',         // Make Chrome not complain
