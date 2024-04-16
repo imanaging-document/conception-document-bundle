@@ -18,4 +18,8 @@ interface ConceptionPersonnalisationServiceInterface
   public function personnalizeText(string $text, ConceptionDocumentInterface $conceptionDocument): string;
 
   public function showSearchEntityForm(ConceptionTemplateTypeInterface $templateType): mixed;
+
+  public function addBlocCustom(ConceptionBlocTypeInterface $typeBloc, ConceptionPageInterface $page, array $params): mixed;
+  
+  public function showAddTypeBlocPartial(string $codeTypeBloc): mixed;
 }

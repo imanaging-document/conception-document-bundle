@@ -3,6 +3,7 @@
 namespace Imanaging\ConceptionDocumentBundle;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionBlocTypeInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionDocumentInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionPageInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionPersonnalisationServiceInterface;
@@ -41,6 +42,16 @@ class ConceptionDocument
   public function showSearchEntityForm(ConceptionTemplateTypeInterface $typeTemplate): Response
   {
     return new Response($this->conceptionPersonnalisationService->showSearchEntityForm($typeTemplate));
+  }
+
+  public function showAddTypeBlocPartial(string $codeTypeBloc): Response
+  {
+    return new Response($this->conceptionPersonnalisationService->showAddTypeBlocPartial($codeTypeBloc));
+  }
+  
+  public function addBlocCustom(ConceptionBlocTypeInterface $typeBloc, ConceptionPageInterface $page, array $params): bool
+  {
+    return $this->conceptionPersonnalisationService->addBlocCustom($typeBloc, $page, $params);
   }
 
   /**

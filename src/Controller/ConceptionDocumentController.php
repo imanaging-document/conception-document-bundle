@@ -594,53 +594,61 @@ class ConceptionDocumentController extends AbstractController
 
       $typeBloc = $this->em->getRepository(ConceptionBlocTypeInterface::class)->findOneBy(['code' => $params['type_bloc']]);
       if ($typeBloc instanceof ConceptionBlocTypeInterface){
-        $className = $typeBloc->getEntity();
-        $bloc = new $className();
-        $bloc->setPage($page);
-        $bloc->setType($typeBloc);
-        switch ($params['type_bloc']){
-          case 'bloc_image':
-            $files = $request->files->all();
-            $image = $files['image'];
-            if ($image instanceof UploadedFile){
-              $relativeDir = '/template-'.$page->getTemplate()->getId(). '/page-'.$page->getId().'/images/';
-              $imagesDir = $this->uploadPath . $relativeDir;
-              if (!is_dir($imagesDir)) {
-                mkdir($imagesDir, 0755, true);
-              }
+        if (in_array($params['type_bloc'], ['bloc_image', 'bloc_texte', 'formes_predefinies'])){
+          $className = $typeBloc->getEntity();
+          $bloc = new $className();
+          $bloc->setPage($page);
+          $bloc->setType($typeBloc);
+          switch ($params['type_bloc']){
+            case 'bloc_image':
+              $files = $request->files->all();
+              $image = $files['image'];
+              if ($image instanceof UploadedFile){
+                $relativeDir = '/template-'.$page->getTemplate()->getId(). '/page-'.$page->getId().'/images/';
+                $imagesDir = $this->uploadPath . $relativeDir;
+                if (!is_dir($imagesDir)) {
+                  mkdir($imagesDir, 0755, true);
+                }
 
-              $fileName = $image->getClientOriginalName();
-              if ($image->move($imagesDir, $fileName)){
-                $bloc->setPath($relativeDir.$fileName);
+                $fileName = $image->getClientOriginalName();
+                if ($image->move($imagesDir, $fileName)){
+                  $bloc->setPath($relativeDir.$fileName);
+                } else {
+                  $this->addFlash('error', 'Une erreur est survenue lors du déplacement de l\'image dans le dossier de destination');
+                  return $this->redirectToRoute('conception_document_conception_tool', ['id' => $page->getTemplate()->getId(), 'entityId' => $entityId, 'pageNumber' => $page->getOrdre()]);
+                }
               } else {
-                $this->addFlash('error', 'Une erreur est survenue lors du déplacement de l\'image dans le dossier de destination');
+                $this->addFlash('error', 'Veuillez sélectionner une image.');
                 return $this->redirectToRoute('conception_document_conception_tool', ['id' => $page->getTemplate()->getId(), 'entityId' => $entityId, 'pageNumber' => $page->getOrdre()]);
               }
-            } else {
-              $this->addFlash('error', 'Veuillez sélectionner une image.');
-              return $this->redirectToRoute('conception_document_conception_tool', ['id' => $page->getTemplate()->getId(), 'entityId' => $entityId, 'pageNumber' => $page->getOrdre()]);
-            }
-            break;
-          case 'bloc_texte':
-            $bloc->setTexte($params['texte']);
-            $bloc->setModeRaw(true);
-            break;
-          case 'formes_predefinies':
-            $bloc->setTypeForme($params['forme_predefinie']);
-            break;
-        }
-        $bloc->setLibelle($params['libelle']);
-        $this->em->persist($bloc);
+              break;
+            case 'bloc_texte':
+              $bloc->setTexte($params['texte']);
+              $bloc->setModeRaw(true);
+              break;
+            case 'formes_predefinies':
+              $bloc->setTypeForme($params['forme_predefinie']);
+              break;
+          }
+          $bloc->setLibelle($params['libelle']);
+          $this->em->persist($bloc);
 
-        $stylesToCreate = $bloc->getStylesToCreate();
-        foreach ($stylesToCreate as $style){
-          $this->em->persist($style);
+          $stylesToCreate = $bloc->getStylesToCreate();
+          foreach ($stylesToCreate as $style){
+            $this->em->persist($style);
+          }
+          $this->addFlash('success', 'Bloc ajouté avec succès : '.$params['type_bloc']);
+        } else {
+          if ($this->conceptionDocument->addBlocCustom($typeBloc, $page, $params)){
+            $this->addFlash('success', 'Bloc ajouté avec succès : '.$params['type_bloc']);
+          }
         }
-        $this->em->flush();
-        return $this->redirectToRoute('conception_document_conception_tool', ['id' => $page->getTemplate()->getId(), 'entityId' => $entityId, 'pageNumber' => $page->getOrdre()]);
       } else {
         $this->addFlash('error', 'Type de bloc introuvable : '.$params['type_bloc']);
       }
+
+      $this->em->flush();
+      return $this->redirectToRoute('conception_document_conception_tool', ['id' => $page->getTemplate()->getId(), 'entityId' => $entityId, 'pageNumber' => $page->getOrdre()]);
     } else {
       $this->addFlash('error', 'Page introuvable : '.$pageId);
     }
@@ -710,7 +718,11 @@ class ConceptionDocumentController extends AbstractController
     }
     return $this->redirectToRoute('conception_document');
   }
-  
+
+  /**
+   * @param Request $request
+   * @return mixed
+   */
   public function loadTypeBlocPartial(Request $request): Response
   {
     $params = $request->request->all();
@@ -722,7 +734,7 @@ class ConceptionDocumentController extends AbstractController
       case 'formes_predefinies':
         return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/partials/bloc-generique/bloc-forme.html.twig"));
       default:
-        return new Response();
+        return $this->conceptionDocument->showAddTypeBlocPartial($params['typeBloc']);
     }
   }
 
