@@ -54,6 +54,11 @@ class ConceptionDocument
     return $this->conceptionPersonnalisationService->addBlocCustom($typeBloc, $page, $params);
   }
 
+  public function getCustomConceptionDocument(ConceptionTemplateTypeInterface $conceptionTemplateType, int $entityId): mixed
+  {
+    return $this->conceptionPersonnalisationService->getCustomConceptionDocument($conceptionTemplateType, $entityId);
+  }
+
   /**
    * @param $entity
    * @param ConceptionTemplateInterface $conceptionTemplate
