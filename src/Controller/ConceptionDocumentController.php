@@ -2,6 +2,7 @@
 
 namespace Imanaging\ConceptionDocumentBundle\Controller;
 
+use App\Service\ConceptionPersonnalisationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Imanaging\ConceptionDocumentBundle\ConceptionDocument;
@@ -38,7 +39,9 @@ class ConceptionDocumentController extends AbstractController
    * @param EntityManagerInterface $em
    * @param ConceptionDocument $conceptionDocument
    * @param Environment $twig
+   * @param $uploadPath
    * @param $basePath
+   * @param ConceptionPersonnalisationService $conceptionPersonnalisationService
    */
   public function __construct(EntityManagerInterface $em, ConceptionDocument $conceptionDocument, Environment $twig, $uploadPath, $basePath)
   {
@@ -525,18 +528,27 @@ class ConceptionDocumentController extends AbstractController
     if ($template instanceof ConceptionTemplateInterface){
       $page = $this->em->getRepository(ConceptionPageInterface::class)->findOneBy(['template' => $template, 'ordre' => $pageNumber]);
       if ($page instanceof ConceptionPageInterface){
-        $conceptionDocument = $this->em->getRepository($template->getType()->getTargetEntity())->find($entityId);
-        if ($conceptionDocument instanceof ConceptionDocumentInterface){
-          return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/document.html.twig", [
-            'page' => $page,
-            'entity_id' => $entityId,
-            'conception_document' => $conceptionDocument,
-            'preshow' => true,
-            'basePath' => $this->basePath,
-          ]));
+        if (!$this->em->getMetadataFactory()->isTransient($template->getType()->getTargetEntity())){
+          $conceptionDocument = $this->em->getRepository($template->getType()->getTargetEntity())->find($entityId);
+          if (!($conceptionDocument instanceof ConceptionDocumentInterface)){
+            $this->addFlash('error', $template->getType()->getTargetEntity().' introuvable : '.$entityId);
+            return $this->redirectToRoute('conception_document');
+          }
         } else {
-          $this->addFlash('error', $template->getType()->getTargetEntity().' introuvable : '.$entityId);
+          $conceptionDocument = $this->conceptionDocument->getCustomConceptionDocument($template->getType(), $entityId);
+          if (!($conceptionDocument instanceof ConceptionDocumentInterface)){
+            $this->addFlash('error', $template->getType()->getTargetEntity().' introuvable : '.$entityId);
+            return $this->redirectToRoute('conception_document');
+          }
         }
+
+        return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/document.html.twig", [
+          'page' => $page,
+          'entity_id' => $entityId,
+          'conception_document' => $conceptionDocument,
+          'preshow' => true,
+          'basePath' => $this->basePath,
+        ]));
       } else {
         $this->addFlash('error', 'Page introuvable : '.$pageNumber);
       }
