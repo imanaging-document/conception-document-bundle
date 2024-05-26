@@ -412,12 +412,15 @@ class ConceptionDocumentController extends AbstractController
     $template = $this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
     if ($template instanceof ConceptionTemplateInterface){
       $params = $request->request->all();
-      $targetEntity = $this->em->getRepository($template->getType()->getTargetEntity())->find($params['id']);
-      if (is_null($targetEntity)){
-        $this->addFlash('error', 'Item de personnalisation introuvable pour la classe '.$template->getType()->getTargetEntity().' : '.$params['id']);
-        return $this->redirectToRoute('conception_document_select_entity', ['id' => $params['id']]);
+      if (!$this->em->getMetadataFactory()->isTransient($template->getType()->getTargetEntity())){
+        $targetEntity = $this->em->getRepository($template->getType()->getTargetEntity())->find($params['id']);
+        if (is_null($targetEntity)){
+          $this->addFlash('error', 'Item de personnalisation introuvable pour la classe '.$template->getType()->getTargetEntity().' : '.$params['id']);
+          return $this->redirectToRoute('conception_document_select_entity', ['id' => $params['id']]);
+        }
       }
-      return $this->redirectToRoute('conception_document_conception_tool', ['id' => $id, 'entityId' => $params['id'], 'pageNumber' => 1]);
+      return $this->redirectToRoute('conception_document_conception_tool', [
+        'id' => $id, 'entityId' => $params['id'], 'pageNumber' => 1]);
     } else {
       $this->addFlash('error', 'Template introuvable : '.$id);
       return $this->redirectToRoute('conception_document');
