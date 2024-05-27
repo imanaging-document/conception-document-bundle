@@ -1154,25 +1154,34 @@ class ConceptionDocumentController extends AbstractController
   {
     $template = $this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
     if ($template instanceof ConceptionTemplateInterface){
-      $targetEntity = $this->em->getRepository($template->getType()->getTargetEntity())->find($entityId);
-      if ($targetEntity instanceof ConceptionDocumentInterface){
-        $res = $this->conceptionDocument->genererPdf($targetEntity, $template, true);
-        if ($res['success']){
-          return $this->file($res['filepath'], strtolower($template->getType()->getLibelle()).'_document_test.pdf');
-        } else {
-          $this->addFlash('error', $res['error_message']);
+      if (!$this->em->getMetadataFactory()->isTransient($template->getType()->getTargetEntity())){
+        $conceptionDocument = $this->em->getRepository($template->getType()->getTargetEntity())->find($entityId);
+        if (!($conceptionDocument instanceof ConceptionDocumentInterface)){
+          $this->addFlash('error', $template->getType()->getTargetEntity().' introuvable : '.$entityId);
+          return $this->redirectToRoute('conception_document');
         }
-        return $this->redirectToRoute('conception_document_conception_tool', [
-          'id' => $templateId,
-          'entityId' => $entityId,
-          'pageNumber' => $pageId
-        ]);
       } else {
-        $this->addFlash('error', 'Entité introuvable : '.$entityId);
+        $conceptionDocument = $this->conceptionDocument->getCustomConceptionDocument($template->getType(), $entityId);
+        if (!($conceptionDocument instanceof ConceptionDocumentInterface)){
+          $this->addFlash('error', $template->getType()->getTargetEntity().' introuvable : '.$entityId);
+          return $this->redirectToRoute('conception_document');
+        }
       }
+
+      $res = $this->conceptionDocument->genererPdf($conceptionDocument, $template, true);
+      if ($res['success']){
+        return $this->file($res['filepath'], strtolower($template->getType()->getLibelle()).'_document_test.pdf');
+      } else {
+        $this->addFlash('error', $res['error_message']);
+      }
+      return $this->redirectToRoute('conception_document_conception_tool', [
+        'id' => $templateId,
+        'entityId' => $entityId,
+        'pageNumber' => $pageId
+      ]);
     } else {
       $this->addFlash('error', 'Template introuvable : '.$id);
     }
-    return $this->redirectToRoute('hephaistos_homepage');
+    return $this->redirectToRoute('conception_document');
   }
 }
