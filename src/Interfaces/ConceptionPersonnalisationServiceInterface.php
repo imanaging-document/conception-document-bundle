@@ -7,7 +7,6 @@
  */
 
 namespace Imanaging\ConceptionDocumentBundle\Interfaces;
-use Imanaging\ConceptionDocumentBundle\ConceptionDocument;
 
 interface ConceptionPersonnalisationServiceInterface
 {
@@ -19,9 +18,13 @@ interface ConceptionPersonnalisationServiceInterface
 
   public function showSearchEntityForm(ConceptionTemplateTypeInterface $templateType): mixed;
 
+  public function getRandomEntityId(ConceptionTemplateTypeInterface $templateType): ?int;
+
   public function addBlocCustom(ConceptionBlocTypeInterface $typeBloc, ConceptionPageInterface $page, array $params): mixed;
   
   public function showAddTypeBlocPartial(string $codeTypeBloc): mixed;
   
   public function getCustomConceptionDocument(ConceptionTemplateTypeInterface $conceptionTemplateType, int $entityId): mixed;
+
+  public function showCustomBlocEdition(ConceptionBlocInterface $bloc): mixed;
 }

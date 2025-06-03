@@ -52,7 +52,7 @@
   <hr>
 {% else %}
   <div>
-    Type de bloc non géré nativement : <b>{{ bloc.type.code }}</b>
+    {{ showCustomBlocEdition(bloc)|raw }}
   </div>
 {% endif %}
 

@@ -429,6 +429,34 @@ class ConceptionDocumentController extends AbstractController
 
   /**
    * @param $id
+   * @param Request $request
+   * @return mixed
+   */
+  public function randomEntity($id, Request $request): Response
+  {
+    $template = $this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
+    if ($template instanceof ConceptionTemplateInterface){
+      $params = $request->request->all();
+      if (!$this->em->getMetadataFactory()->isTransient($template->getType()->getTargetEntity())){
+        $targetEntityId = $this->conceptionDocument->getRandomEntityId($template->getType());
+        if (is_null($targetEntityId)){
+          $this->addFlash('error', 'Item de personnalisation introuvable pour la classe '.$template->getType()->getTargetEntity().' : '.$params['id']);
+          return $this->redirectToRoute('conception_document_select_entity', ['id' => $params['id']]);
+        }
+        return $this->redirectToRoute('conception_document_conception_tool', [
+          'id' => $id, 'entityId' => $targetEntityId, 'pageNumber' => 1]);
+      } else {
+        $this->addFlash('error', 'Entité non gérée : '.$template->getType()->getTargetEntity());
+        return $this->redirectToRoute('conception_document');
+      }
+    } else {
+      $this->addFlash('error', 'Template introuvable : '.$id);
+      return $this->redirectToRoute('conception_document');
+    }
+  }
+
+  /**
+   * @param $id
    * @param $entityId
    * @param $pageNumber
    * @return mixed

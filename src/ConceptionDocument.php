@@ -44,6 +44,11 @@ class ConceptionDocument
     return new Response($this->conceptionPersonnalisationService->showSearchEntityForm($typeTemplate));
   }
 
+  public function getRandomEntityId(ConceptionTemplateTypeInterface $typeTemplate): ?int
+  {
+    return $this->conceptionPersonnalisationService->getRandomEntityId($typeTemplate);
+  }
+
   public function showAddTypeBlocPartial(string $codeTypeBloc): Response
   {
     return new Response($this->conceptionPersonnalisationService->showAddTypeBlocPartial($codeTypeBloc));

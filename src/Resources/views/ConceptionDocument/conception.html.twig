@@ -373,10 +373,17 @@
   </div>
 
   <div id="help">
+    <div>
+      <a href="{{ path('conception_document') }}" class="btn btn-primary w-100">
+        <i class="fa fa-arrow-left fa-fw"></i>Revenir à la liste des conceptions
+      </a>
+    </div>
 
-    <a href="{{ path('conception_document') }}" class="btn btn-primary w-100">
-      <i class="fa fa-arrow-left fa-fw"></i>Revenir à la liste des conceptions
-    </a>
+    <div class="mt-2">
+      <a href="{{ path('conception_document_random_entity', {id: page.template.type.id}) }}" class="btn btn-success w-100">
+        <i class="fa fa-random fa-fw"></i>Changer d'item de personnalisation (<b>au hasard</b>)
+      </a>
+    </div>
 
     <div class="btn-group mt-4">
       {% for _page in page.template.pages %}

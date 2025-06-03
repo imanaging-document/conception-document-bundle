@@ -40,6 +40,10 @@
         <default key="_controller">imanaging_conception_document.conception_document_controller::validateEntitySelection</default>
     </route>
 
+    <route id="conception_document_random_entity" path="/conception/{id}/random-entity">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::randomEntity</default>
+    </route>
+
     <route id="conception_document_conception_tool" path="/conception/{id}/entity/{entityId}/page/{pageNumber}/conception-tool">
         <default key="_controller">imanaging_conception_document.conception_document_controller::conceptionTool</default>
     </route>

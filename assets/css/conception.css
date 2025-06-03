@@ -1,0 +1,32 @@
+table.table-conception-document{
+  font-family: sans-serif;
+  border-collapse: collapse;
+  font-size: 1em;
+  font-weight: 500;
+  width: 100%;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  margin-bottom: 15px;
+}
+
+table.table-conception-document thead tr {
+  background-color: #007bff;
+  color: #ffffff;
+  text-align: left;
+}
+
+table.table-conception-document th,
+table.table-conception-document td {
+  padding: 12px 8px;
+}
+
+table.table-conception-document th{
+  white-space: nowrap;
+}
+
+table.table-conception-document tbody tr {
+  border-bottom: 1px solid #dddddd;
+}
+
+table.table-conception-document tbody tr:last-of-type {
+  border-bottom: 2px solid #007bff;
+}

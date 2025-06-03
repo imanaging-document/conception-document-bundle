@@ -26,6 +26,7 @@ class TwigFunctions extends AbstractExtension
       new TwigFunction('renderBloc', [$this, 'renderBloc']),
       new TwigFunction('getImageBinary', [$this, 'getImageBinary']),
       new TwigFunction('personnalizeText', [$this, 'personnalizeText']),
+      new TwigFunction('showCustomBlocEdition', [$this, 'showCustomBlocEdition']),
     ];
   }
 
@@ -61,5 +62,10 @@ class TwigFunctions extends AbstractExtension
   public function personnalizeText(string $text, ConceptionDocumentInterface $conceptionDocument)
   {
     return $this->conceptionPersonnalisationService->personnalizeText($text, $conceptionDocument);
+  }
+
+  public function showCustomBlocEdition(ConceptionBlocInterface $bloc)
+  {
+    return $this->conceptionPersonnalisationService->showCustomBlocEdition($bloc);
   }
 }
