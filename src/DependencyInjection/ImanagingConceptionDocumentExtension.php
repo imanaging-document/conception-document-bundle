@@ -16,7 +16,7 @@ class ImanagingConceptionDocumentExtension extends Extension
    * @param ContainerBuilder $container
    * @throws Exception
    */
-  public function load(array $configs, ContainerBuilder $container)
+  public function load(array $configs, ContainerBuilder $container): void
   {
     $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
     $loader->load('services.xml');
@@ -35,7 +35,7 @@ class ImanagingConceptionDocumentExtension extends Extension
     $definition->setArgument(1, $config['upload_path']);
   }
 
-  public function getAlias() : string
+  public function getAlias(): string
   {
     return 'imanaging_conception_document';
   }
