@@ -22,7 +22,6 @@
             <argument type="service" id="doctrine.orm.default_entity_manager" />
             <argument type="service" id="imanaging_conception_document.conception_document" />
             <argument type="service" id="twig" />
-            <argument type="service" id="app.conception_personnalisation_service" />
         </service>
 
         <service id="imanaging_conception_document.twig_functions" class="Imanaging\ConceptionDocumentBundle\Twig\TwigFunctions">

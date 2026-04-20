@@ -7,7 +7,7 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class ImanagingConceptionDocumentBundle extends Bundle
 {
-  public function getContainerExtension() : ?ImanagingConceptionDocumentExtension
+  public function getContainerExtension(): ?ImanagingConceptionDocumentExtension
   {
     if (null === $this->extension) {
       $this->extension = new ImanagingConceptionDocumentExtension();

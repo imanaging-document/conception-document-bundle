@@ -20,7 +20,7 @@ class TwigFunctions extends AbstractExtension
     $this->uploadPath = $uploadPath;
   }
 
-  public function getFunctions() : array
+  public function getFunctions(): array
   {
     return [
       new TwigFunction('canShowBloc', [$this, 'canShowBloc']),
