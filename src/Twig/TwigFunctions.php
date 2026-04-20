@@ -3,6 +3,7 @@
 namespace Imanaging\ConceptionDocumentBundle\Twig;
 
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionBlocInterface;
+use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionBlocStyleInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionDocumentInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionPersonnalisationServiceInterface;
 use Twig\Extension\AbstractExtension;
@@ -27,6 +28,10 @@ class TwigFunctions extends AbstractExtension
       new TwigFunction('getImageBinary', [$this, 'getImageBinary']),
       new TwigFunction('personnalizeText', [$this, 'personnalizeText']),
       new TwigFunction('showCustomBlocEdition', [$this, 'showCustomBlocEdition']),
+      new TwigFunction('isBlocLocked', [$this, 'isBlocLocked']),
+      new TwigFunction('isNativeCheckboxBloc', [$this, 'isNativeCheckboxBloc']),
+      new TwigFunction('isNativeCheckboxChecked', [$this, 'isNativeCheckboxChecked']),
+      new TwigFunction('isBackgroundBloc', [$this, 'isBackgroundBloc']),
     ];
   }
 
@@ -67,5 +72,102 @@ class TwigFunctions extends AbstractExtension
   public function showCustomBlocEdition(ConceptionBlocInterface $bloc)
   {
     return $this->conceptionPersonnalisationService->showCustomBlocEdition($bloc);
+  }
+
+  public function isBlocLocked(ConceptionBlocInterface $bloc): bool
+  {
+    $rootStyle = $this->getRootStyle($bloc);
+    if (!($rootStyle instanceof ConceptionBlocStyleInterface)) {
+      return false;
+    }
+
+    $properties = json_decode($rootStyle->getStyle(), true);
+    if (!is_array($properties)) {
+      return false;
+    }
+
+    return $this->isTruthy($properties['--bundle-lock'] ?? false);
+  }
+
+  public function isNativeCheckboxBloc(ConceptionBlocInterface $bloc): bool
+  {
+    if (!method_exists($bloc, 'getType') || !method_exists($bloc->getType(), 'getCode')) {
+      return false;
+    }
+
+    if ($bloc->getType()->getCode() !== 'bloc_texte') {
+      return false;
+    }
+
+    $rootStyle = $this->getRootStyle($bloc);
+    if (!($rootStyle instanceof ConceptionBlocStyleInterface)) {
+      return false;
+    }
+
+    $properties = json_decode($rootStyle->getStyle(), true);
+    if (!is_array($properties)) {
+      return false;
+    }
+
+    return $this->isTruthy($properties['--bundle-checkbox-native'] ?? false);
+  }
+
+  public function isNativeCheckboxChecked(ConceptionBlocInterface $bloc): bool
+  {
+    if (!$this->isNativeCheckboxBloc($bloc)) {
+      return false;
+    }
+
+    $rootStyle = $this->getRootStyle($bloc);
+    if (!($rootStyle instanceof ConceptionBlocStyleInterface)) {
+      return false;
+    }
+
+    $properties = json_decode($rootStyle->getStyle(), true);
+    if (!is_array($properties)) {
+      return false;
+    }
+
+    return $this->isTruthy($properties['--bundle-checkbox-checked'] ?? false);
+  }
+
+  public function isBackgroundBloc(ConceptionBlocInterface $bloc): bool
+  {
+    if (!method_exists($bloc, 'getType') || !method_exists($bloc->getType(), 'getCode')) {
+      return false;
+    }
+    if ($bloc->getType()->getCode() !== 'bloc_image') {
+      return false;
+    }
+
+    $rootStyle = $this->getRootStyle($bloc);
+    if ($rootStyle instanceof ConceptionBlocStyleInterface) {
+      $properties = json_decode($rootStyle->getStyle(), true);
+      if (is_array($properties) && $this->isTruthy($properties['--bundle-background'] ?? false)) {
+        return true;
+      }
+    }
+
+    return stripos($bloc->getLibelle(), 'fond de page') === 0;
+  }
+
+  private function getRootStyle(ConceptionBlocInterface $bloc): ?ConceptionBlocStyleInterface
+  {
+    if (!method_exists($bloc, 'getStyleByCode')) {
+      return null;
+    }
+
+    $rootStyle = $bloc->getStyleByCode('root');
+    if ($rootStyle instanceof ConceptionBlocStyleInterface) {
+      return $rootStyle;
+    }
+
+    return null;
+  }
+
+  private function isTruthy(mixed $value): bool
+  {
+    $normalized = strtolower(trim((string)$value));
+    return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
   }
 }

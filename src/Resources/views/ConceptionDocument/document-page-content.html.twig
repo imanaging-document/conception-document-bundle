@@ -1,0 +1,7 @@
+<div class="document-sheet">
+  {% for bloc in page.blocs %}
+    {% if canShowBloc(bloc.getConditions(), conception_document) %}
+      {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/bloc.html.twig' with {'bloc' : bloc, 'preshow': false} %}
+    {% endif %}
+  {% endfor %}
+</div>

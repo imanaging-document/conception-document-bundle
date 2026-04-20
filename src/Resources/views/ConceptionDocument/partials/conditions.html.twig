@@ -1,70 +1,98 @@
 {% if conditions|length > 0 %}
-  {% if cible == 'page' %}
-    <h3 class="text-danger"><i class="fa fa-info-circle fa-fw"></i>Cette page possède des conditions. Elle ne sera génerée que si elle respecte les conditions ci-dessous.</h3>
-  {% else %}
-    <h3 class="text-danger"><i class="fa fa-info-circle fa-fw"></i>Ce bloc possède des conditions. Il ne sera visible que s'il respecte les conditions ci-dessous.</h3>
-  {% endif %}
+  <div class="alert alert-warning border-warning d-flex align-items-center mb-3">
+    <i class="fa fa-exclamation-triangle fa-lg me-3"></i>
+    <div>
+      {% if cible == 'page' %}
+        <strong>Cette page possède des conditions.</strong> Elle ne sera générée que si elles sont respectées.
+      {% else %}
+        <strong>Ce bloc possède des conditions.</strong> Il ne sera visible que s'il les respecte.
+      {% endif %}
+    </div>
+  </div>
 
-  <table class="table table-bordered custom-table">
-    <tbody>
-    {% for condition in conditions %}
-      <tr>
-        <td>{{ condition.typeCondition }}</td>
-        <td>{{ condition.typeComparaison }}</td>
-        <td>{{ condition.valeurComparaison }}</td>
-        <td class="text-center">.
-          <a href="{{ path('conception_document_conception_tool_remove_condition', {id: condition.id, entityId: entity_id}) }}">
-            <i class="fa fa-trash fa-lg text-danger pointer"></i>
-          </a>
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-responsive mb-4">
+    <table class="table table-sm table-hover table-conception-modern align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Condition</th>
+          <th>Comparaison</th>
+          <th>Valeur</th>
+          <th class="text-center" style="width: 50px;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for condition in conditions %}
+        <tr>
+          <td>{{ condition.typeCondition }}</td>
+          <td><span class="badge bg-info text-dark">{{ condition.typeComparaison }}</span></td>
+          <td><code>{{ condition.valeurComparaison }}</code></td>
+          <td class="text-center">
+            <a href="{{ path('conception_document_conception_tool_remove_condition', {id: condition.id, entityId: entity_id}) }}" class="btn btn-link btn-sm p-0" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette condition ?')">
+              <i class="fa fa-trash text-danger"></i>
+            </a>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% else %}
-  {% if cible == 'page' %}
-    <h3 class="text-success"><i class="fa fa-info-circle fa-fw"></i>Cette page ne possède aucune condition. Elle sera génerée quoi qu'il arrive.</h3>
-  {% else %}
-    <h3 class="text-success"><i class="fa fa-info-circle fa-fw"></i>Ce bloc ne possède aucune condition. Il sera visible quoi qu'il arrive.</h3>
-  {% endif %}
+  <div class="alert alert-success border-success d-flex align-items-center mb-4">
+    <i class="fa fa-check-circle fa-lg me-3"></i>
+    <div>
+      {% if cible == 'page' %}
+        Cette page ne possède <strong>aucune condition</strong>. Elle sera générée systématiquement.
+      {% else %}
+        Ce bloc ne possède <strong>aucune condition</strong>. Il sera visible systématiquement.
+      {% endif %}
+    </div>
+  </div>
 {% endif %}
 
-<h5><i class="fa fa-plus-circle fa-fw"></i>Ajouter une nouvelle condition</h5>
-<form
-    {% if cible == 'page' %}
-      action="{{ path('conception_document_conception_tool_page_add_condition', {id: page_id, entityId: entity_id}) }}"
-    {% else %}
-      action="{{ path('conception_document_conception_tool_bloc_add_condition', {id: bloc_id, entityId: entity_id}) }}"
-    {% endif %}
-    method="post">
-  <div class="form-group">
-    <label for="type_condition">Type de condition</label>
-    <select name="type_condition" id="type_condition">
-      {% for code_type_condition, libelle in types_conditions %}
-        <option value="{{ code_type_condition }}">{{ libelle }}</option>
-      {% endfor %}
-    </select>
+<div class="card bg-light border-0 shadow-sm mt-3">
+  <div class="card-body">
+    <h6 class="card-title mb-3"><i class="fa fa-plus-circle fa-fw text-success"></i> Ajouter une nouvelle condition</h6>
+    <form
+        {% if cible == 'page' %}
+          action="{{ path('conception_document_conception_tool_page_add_condition', {id: page_id, entityId: entity_id}) }}"
+        {% else %}
+          action="{{ path('conception_document_conception_tool_bloc_add_condition', {id: bloc_id, entityId: entity_id}) }}"
+        {% endif %}
+        method="post">
+      
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="type_condition" class="form-label small">Type de condition</label>
+          <select name="type_condition" id="type_condition" class="form-select form-select-sm">
+            {% for code_type_condition, libelle in types_conditions %}
+              <option value="{{ code_type_condition }}">{{ libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-4">
+          <label for="type_comparaison" class="form-label small">Type de comparaison</label>
+          <select name="type_comparaison" id="type_comparaison" class="form-select form-select-sm">
+            {% for code_type_comparaison, libelle in types_comparaisons %}
+              <option value="{{ code_type_comparaison }}">{{ libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-4 div-valeur-comparaison">
+          <label for="valeur_comparaison" class="form-label small">Valeur de comparaison</label>
+          <input type="text" id="valeur_comparaison" name="valeur_comparaison" class="form-control form-control-sm" placeholder="Valeur à comparer">
+        </div>
+        
+        <div class="col-12">
+          <button class="btn btn-success btn-sm w-100 mt-2" type="submit">
+            <i class="fa fa-plus-circle fa-fw"></i> Ajouter la condition
+          </button>
+        </div>
+      </div>
+    </form>
   </div>
-  <div class="form-group">
-    <label for="type_comparaison">Type de comparaison</label>
-    <select name="type_comparaison" id="type_comparaison">
-      {% for code_type_comparaison, libelle in types_comparaisons %}
-        <option value="{{ code_type_comparaison }}">{{ libelle }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="form-group div-valeur-comparaison">
-    <label for="valeur_comparaison">Valeur de comparaison</label>
-    <input type="text" id="valeur_comparaison" name="valeur_comparaison" class="form-control" placeholder="Valeur à comparer">
-  </div>
-  <button class="btn btn-success w-100" type="submit">
-    {% if cible == 'page' %}
-      <i class="fa fa-plus-circle fa-fw"></i>Ajouter une nouvelle condition sur cette page
-    {% else %}
-      <i class="fa fa-plus-circle fa-fw"></i>Ajouter une nouvelle condition sur ce bloc
-    {% endif %}
-  </button>
-</form>
+</div>
 
 <script>
   $("select[name='type_comparaison']").change(function(){

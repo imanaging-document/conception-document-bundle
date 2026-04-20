@@ -1,83 +1,108 @@
 {% extends basePath %}
 
 {% block body %}
+  <title>Liste des conceptions</title>
   <div class="container">
-    <h4 class="mt-2">Liste des conceptions</h4>
-
-    <table class="table-conception-document">
-      <thead>
-        <tr>
-          <td>#</td>
-          <td>Libellé</td>
-          <td>Type</td>
-          <td>Cible</td>
-          <td>Actif</td>
-          <td>Exporter</td>
-          <td>Importer</td>
-          <td><i class="fa fa-pen fa-lg"></i></td>
-          <td><i class="fa fa-trash fa-lg"></i></td>
-        </tr>
-      </thead>
-      <tbody>
-        {% for conception in conceptions %}
-          <tr>
-            <td>{{ conception.id }}</td>
-            <td>{{ conception.libelle }}</td>
-            <td>{{ conception.type.libelle }}</td>
-            <td>{{ conception.type.targetEntity }}</td>
-            <td>
-              {% if conception.actif %}
-                <i class="fa fa-check-circle fa-lg text-success"></i>
-              {% else %}
-                <i class="fa fa-times-circle fa-lg text-danger"></i>
-              {% endif %}
-            </td>
-            <td>
-              <a href="{{ path('conception_document_upload_yaml', {id: conception.id}) }}">
-                <i class="fa fa-upload fa-lg text-primary"></i>
-              </a>
-            </td>
-            <td>
-              <i class="fa fa-download fa-lg text-primary pointer show-modal-import"
-                 data-url="{{ path('conception_document_show_import_modal', {id: conception.id}) }}"></i>
-            </td>
-            <td>
-              <a href="{{ path('conception_document_select_entity', {id: conception.id}) }}">
-                <i class="fa fa-pen fa-lg"></i>
-              </a>
-            </td>
-            <td>
-              <a href="{{ path('conception_document_remove', {id: conception.id}) }}">
-                <i class="fa fa-trash fa-lg text-danger"></i>
-              </a>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <div>
-      <form action="{{ path('conception_document_add') }}" method="post">
-        <div class="form-group">
-          <label for="libelle">Nom de la conception</label>
-          <input type="text" name="libelle" id="libelle" class="form-control">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light py-3">
+        <h4 class="mb-0 text-primary"><i class="fa fa-list me-2"></i>Liste des conceptions</h4>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-conception-modern align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">#</th>
+                <th>Libellé</th>
+                <th>Type</th>
+                <th>Format</th>
+                <th>Cible</th>
+                <th class="text-center">Actif</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for conception in conceptions %}
+                <tr>
+                  <td class="ps-3 text-muted">{{ conception.id }}</td>
+                  <td class="fw-bold">{{ conception.libelle }}</td>
+                  <td><span class="badge bg-secondary opacity-75">{{ conception.type.libelle }}</span></td>
+                  <td>
+                    <select class="form-select form-select-sm template-format-select"
+                            data-url="{{ path('conception_document_save_template_format', {id: conception.id}) }}">
+                      {% for format in available_formats %}
+                        <option value="{{ format }}" {% if template_formats[conception.id]|default('A4') == format %}selected{% endif %}>
+                          {{ format }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  <td><code>{{ conception.type.targetEntity }}</code></td>
+                  <td class="text-center">
+                    <i class="fa {% if conception.actif %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} fa-lg pointer toggle-actif"
+                       data-url="{{ path('conception_document_toggle_actif', {id: conception.id}) }}"
+                       title="Cliquer pour changer le statut"></i>
+                  </td>
+                  <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                      <a href="{{ path('conception_document_upload_yaml', {id: conception.id}) }}" class="btn btn-outline-primary" title="Exporter YAML">
+                        <i class="fa fa-upload"></i>
+                      </a>
+                      <button class="btn btn-outline-primary show-modal-import" data-url="{{ path('conception_document_show_import_modal', {id: conception.id}) }}" title="Importer YAML">
+                        <i class="fa fa-download"></i>
+                      </button>
+                      <a href="{{ path('conception_document_select_entity', {id: conception.id}) }}" class="btn btn-outline-warning" title="Éditer">
+                        <i class="fa fa-pen"></i>
+                      </a>
+                      <a href="{{ path('conception_document_remove', {id: conception.id}) }}" class="btn btn-outline-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette conception ?')">
+                        <i class="fa fa-trash"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
+      </div>
+    </div>
 
-        <div class="form-group">
-          <label for="type">Type de conception</label>
-          <select name="type" id="type" class="form-control">
-            {% for type in types %}
-              <option value="{{ type.id }}">{{ type.libelle }}</option>
-            {% endfor %}
-          </select>
-        </div>
+    <div class="card shadow-sm border-success">
+      <div class="card-header bg-success text-white py-2">
+        <h5 class="mb-0 small text-uppercase fw-bold"><i class="fa fa-plus-circle me-2"></i>Ajouter une conception</h5>
+      </div>
+      <div class="card-body">
+        <form action="{{ path('conception_document_add') }}" method="post" class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label for="libelle" class="form-label small">Nom de la conception</label>
+            <input type="text" name="libelle" id="libelle" class="form-control form-control-sm" placeholder="Ex: Envoi initial" required>
+          </div>
 
-        <div class="text-center">
-          <button type="submit" class="btn btn-success w-100">
-            <i class="fa fa-plus-circle fa-fw"></i>Ajouter une conception
-          </button>
-        </div>
-      </form>
+          <div class="col-md-3">
+            <label for="type" class="form-label small">Type de conception</label>
+            <select name="type" id="type" class="form-control form-control-sm">
+              {% for type in types %}
+                <option value="{{ type.id }}">{{ type.libelle }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label for="document_format" class="form-label small">Format</label>
+            <select name="document_format" id="document_format" class="form-control form-control-sm">
+              {% for format in available_formats %}
+                <option value="{{ format }}" {% if format == 'A4' %}selected{% endif %}>{{ format }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-success btn-sm w-100">
+              <i class="fa fa-plus-circle me-1"></i> Créer
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div id="divModalImportYaml"></div>
@@ -91,7 +116,8 @@
         type: 'GET',
         success: function (data) {
           $("#divModalImportYaml").html(data);
-          $("#importerConceptionModal").modal();
+          const modal = new bootstrap.Modal(document.getElementById('importerConceptionModal'));
+          modal.show();
         },
         error: function (data){
           var errorMessage;
@@ -101,6 +127,46 @@
             errorMessage = 'Une erreur est survenu lors du chargement de la cible.';
           }
           alert(errorMessage);
+        }
+      });
+    });
+
+    $(".toggle-actif").click(function(){
+      var icon = $(this);
+      var url = icon.data('url');
+      $.ajax({
+        url: url,
+        type: 'POST',
+        success: function (data) {
+          if (data.status === 'success') {
+            if (data.actif) {
+              icon.removeClass('fa-times-circle text-danger').addClass('fa-check-circle text-success');
+            } else {
+              icon.removeClass('fa-check-circle text-success').addClass('fa-times-circle text-danger');
+            }
+          }
+        },
+        error: function (){
+          alert('Une erreur est survenue lors de la modification du statut.');
+        }
+      });
+    });
+
+    $(".template-format-select").change(function(){
+      var select = $(this);
+      var url = select.data('url');
+      var format = select.val();
+      select.prop('disabled', true);
+
+      $.ajax({
+        url: url,
+        type: 'POST',
+        data: {document_format: format},
+        error: function (){
+          alert('Une erreur est survenue lors de la modification du format.');
+        },
+        complete: function (){
+          select.prop('disabled', false);
         }
       });
     });

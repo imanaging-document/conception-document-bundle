@@ -1,191 +1,299 @@
-<div class="pull-right">
-  <a href="{{ path('conception_document_conception_tool_generate_pdf', {id: page.template.id, entityId: entity_id}) }}" class="text-danger mt-4">
-    <i class="fa fa-file-pdf fa-3x"></i>
-  </a>
-</div>
+<div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+  <h2>
+    {{ page.libelle }}
+    <a href="{{ path('conception_document_conception_tool_remove_page', {id: page.id, entityId: entity_id}) }}" class="ms-2" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette page ?')">
+      <i class="fa fa-trash text-danger fs-5"></i>
+    </a>
+  </h2>
 
-<h2>
-  {{ page.libelle }}
-  <a href="{{ path('conception_document_conception_tool_remove_page', {id: page.id, entityId: entity_id}) }}">
-    <i class="fa fa-trash text-danger fa-lg"></i>
-  </a>
-</h2>
-
-<div class="container-verif-integrite">
-  <button class="btn-verifier-integrite-page" data-page-id="{{ page.id }}">
-    <i class="fa fa-check fa-fw"></i>Vérifier l'intégrité de cette page
-  </button>
-
-  <div id="div-result-verif-integrite">
-
-  </div>
-</div>
-
-<div class="tab mt-4">
-  <button id="default-tab" class="main-tablinks" data-tab-target="liste-blocs"><i class="fa fa-bars fa-fw"></i>Liste des blocs</button>
-  <button class="main-tablinks" data-tab-target="ajouter-bloc"><i class="fa fa-plus-circle fa-fw"></i>Ajouter un bloc</button>
-  <button class="main-tablinks" data-tab-target="conditions"><i class="fa fa-question-circle fa-fw"></i>Conditions</button>
-  <button class="main-tablinks" data-tab-target="aide"><i class="fa fa-info-circle fa-fw"></i>Aide</button>
-</div>
-
-<div id="liste-blocs" class="main-tabcontent">
-  <div id="div-multi-rows" class="d-none">
-    <p>
-      <i class="fa fa-info-circle fa-fw"></i>Sélectionnez l'action à effectuer pour les  <b><span id="span-nb-blocs-selected"></span> blocs</b> sélectionnés
-    </p>
-
-    <div class="form-group">
-      <label for="action_to_multi_blocs">Type d'action</label>
-      <select id="action_to_multi_blocs">
-        <option value="deplacer_haut">Déplacer vers le haut</option>
-        <option value="deplacer_bas">Déplacer vers le bas</option>
-        <option value="deplacer_gauche">Déplacer vers la gauche</option>
-        <option value="deplacer_droite">Déplacer vers la droite</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="nb_mm_to_move">Distance en millimètre</label>
-      <input id="nb_mm_to_move" type="text">
-    </div>
-
-    <div id="error-multi-blocs" class="text-danger"></div>
-
-    <button id="btn-valider-action-multi-blocs" class="btn btn-success w-100">
-      <i class="fa fa-check-circle fa-fw"></i>Valider l'action
+  <div class="d-flex align-items-center">
+    <a href="{{ path('conception_document_conception_tool_generate_pdf', {id: page.template.id, entityId: entity_id}) }}" class="btn btn-outline-danger me-3" title="Générer le PDF">
+      <i class="fa fa-file-pdf fa-lg me-1"></i> PDF
+    </a>
+    <button class="btn btn-outline-primary btn-verifier-integrite-page" data-page-id="{{ page.id }}">
+      <i class="fa fa-check-circle fa-fw"></i> Vérifier l'intégrité
     </button>
   </div>
-
-  <table id="table-blocs" class="table table-bordered custom-table mt-2">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Libellé</th>
-        <th>Type de bloc</th>
-        <th class="text-center">
-          <i class="fa fa-pen"></i>
-        </th>
-        <th class="text-center">
-          <input id="cbx-select-all-blocs" type="checkbox">
-        </th>
-        <th class="text-center">
-          <i class="fa fa-copy"></i>
-        </th>
-        <th class="text-center">
-          <i class="fa fa-trash"></i>
-        </th>
-        <th class="text-center">
-          <i class="fa fa-arrows-alt"></i>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for bloc in page.blocs %}
-        {{ _self.showLignes(bloc, entity_id, page) }}
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <div id="loader-edit-bloc" class="d-none mt-4 text-center">
-    <i class="fa fa-spinner fa-spin fa-fw"></i>Chargement en cours ...
-  </div>
-
-  <div id="div-save-style" class="mt-4 text-center">
-  </div>
-
-  <div id="div-edit-bloc" class="mt-4">
-  </div>
 </div>
-<div id="ajouter-bloc" class="main-tabcontent">
-  <form action="{{ path('conception_document_conception_tool_bloc_add', {pageId: page.id, entityId: entity_id}) }}" method="post" enctype="multipart/form-data">
-    <div class="form-group">
-      <label for="libelle">Libellé</label>
-      <input type="text" id="libelle" name="libelle" class="form-control" placeholder="Saisir ici le nom du bloc" required>
+
+<div id="div-result-verif-integrite" class="mb-3"></div>
+
+<ul class="nav nav-tabs mb-4" id="blocTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="liste-blocs-tab" data-bs-toggle="tab" data-bs-target="#liste-blocs" type="button" role="tab"><i class="fa fa-bars fa-fw"></i> Liste des blocs</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="ajouter-bloc-tab" data-bs-toggle="tab" data-bs-target="#ajouter-bloc" type="button" role="tab"><i class="fa fa-plus-circle fa-fw"></i> Ajouter un bloc</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="conditions-tab" data-bs-toggle="tab" data-bs-target="#conditions" type="button" role="tab"><i class="fa fa-question-circle fa-fw"></i> Conditions</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="aide-tab" data-bs-toggle="tab" data-bs-target="#aide" type="button" role="tab"><i class="fa fa-info-circle fa-fw"></i> Aide</button>
+  </li>
+</ul>
+
+<div class="tab-content" id="blocTabContent">
+  <div class="tab-pane fade show active" id="liste-blocs" role="tabpanel">
+    <div class="card border-primary mb-3">
+      <div class="card-body py-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <div class="fw-bold">
+            <i class="fa fa-image text-primary me-1"></i> Import assisté du fond de page
+          </div>
+          <span class="badge bg-primary">Recommandé</span>
+        </div>
+        <p class="small text-muted mb-2">
+          Cette action crée (ou remplace) le bloc de fond sur cette page, le dimensionne automatiquement au format du document et le verrouille.
+        </p>
+        <form action="{{ path('conception_document_conception_tool_page_import_background_assisted', {pageId: page.id, entityId: entity_id}) }}"
+              method="post"
+              enctype="multipart/form-data"
+              class="row g-2 align-items-end">
+          <div class="col-md-9">
+            <label for="background_image" class="form-label small mb-1">Image de fond (PNG/JPG/SVG)</label>
+            <input type="file" id="background_image" name="background_image" class="form-control form-control-sm" accept="image/*" required>
+          </div>
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-primary btn-sm w-100">
+              <i class="fa fa-upload me-1"></i> Importer
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="type_bloc">Type de bloc</label>
-      <select name="type_bloc" id="type_bloc" required>
-        <option value=""></option>
-        {% for type in types_bloc %}
-          <option value="{{ type.code }}">{{ type.libelle }}</option>
-        {% endfor %}
-      </select>
+    <div id="div-multi-rows" class="d-none card bg-light mb-3 p-3">
+      <div class="d-flex align-items-center mb-2">
+        <i class="fa fa-info-circle fa-fw text-primary me-2"></i>
+        <span>Action groupée pour <b><span id="span-nb-blocs-selected"></span> blocs</b> sélectionnés</span>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-5">
+          <label for="action_to_multi_blocs" class="form-label small">Type d'action</label>
+          <select id="action_to_multi_blocs" class="form-select form-select-sm">
+            <option value="deplacer_haut">Déplacer vers le haut</option>
+            <option value="deplacer_bas">Déplacer vers le bas</option>
+            <option value="deplacer_gauche">Déplacer vers la gauche</option>
+            <option value="deplacer_droite">Déplacer vers la droite</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="nb_mm_to_move" class="form-label small">Distance (mm)</label>
+          <input id="nb_mm_to_move" type="number" class="form-control form-select-sm" min="1" value="5">
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+          <button id="btn-valider-action-multi-blocs" class="btn btn-success btn-sm w-100">
+            <i class="fa fa-check-circle fa-fw"></i> Valider
+          </button>
+        </div>
+      </div>
+      <div id="error-multi-blocs" class="text-danger small mt-2"></div>
     </div>
 
-    <div id="div-type-bloc-data">
+    <div class="table-responsive">
+      <table id="table-blocs" class="table table-hover table-striped table-conception-modern align-middle shadow-sm">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>Libellé</th>
+            <th>Type de bloc</th>
+            <th class="text-center" style="width: 50px;">
+              <i class="fa fa-pen text-muted"></i>
+            </th>
+            <th class="text-center" style="width: 50px;">
+              <i class="fa fa-lock text-muted"></i>
+            </th>
+            <th class="text-center" style="width: 50px;">
+              <input id="cbx-select-all-blocs" type="checkbox" class="form-check-input">
+            </th>
+            <th class="text-center" style="width: 50px;">
+              <i class="fa fa-copy text-muted"></i>
+            </th>
+            <th class="text-center" style="width: 50px;">
+              <i class="fa fa-trash text-muted"></i>
+            </th>
+            <th class="text-center" style="width: 50px;">
+              <i class="fa fa-arrows-alt text-muted"></i>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bloc in page.blocs %}
+            {{ _self.showLignes(bloc, entity_id, page) }}
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
 
-    <button type="submit" class="btn-new-bloc">
-      <i class="fa fa-plus-circle fa-fw"></i>Ajouter un nouveau bloc
-    </button>
-  </form>
-</div>
-<div id="conditions" class="main-tabcontent">
-  {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/conditions.html.twig' with {'conditions': page.conditions, 'cible': 'page', 'page_id': page.id } %}
-</div>
-<div id="aide" class="main-tabcontent">
-  <p>
-    Sélectionnez un élément en double cliquant sur celui-ci, puis déplacez le à l'endroit souhaité,
-    validez ensuite son positionnement en effectuant un simple clic.
-  </p>
+    <div id="loader-edit-bloc" class="d-none my-4 text-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+      <p class="mt-2 text-muted small">Chargement en cours ...</p>
+    </div>
 
-  <p>
-    Effectuez un clic droit sur un élément afin de définir ses positions en X et en Y <b>manuellement</b>.
-  </p>
+    <div id="div-save-style" class="mt-3"></div>
+    <div id="div-edit-bloc" class="mt-3"></div>
+  </div>
 
-  <p>Les informations de publipostage sont fictives sur cette pré-visualisation.
-  </p>
+  <div class="tab-pane fade" id="ajouter-bloc" role="tabpanel">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form action="{{ path('conception_document_conception_tool_bloc_add', {pageId: page.id, entityId: entity_id}) }}" method="post" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="libelle" class="form-label">Libellé</label>
+            <input type="text" id="libelle" name="libelle" class="form-control" placeholder="Nom du bloc" required>
+          </div>
 
-  <p>Toutes les dimensions se renseignent <b class="text-danger">en millimètre</b>.</p>
+          <div class="mb-3">
+            <label for="type_bloc" class="form-label">Type de bloc</label>
+            <select name="type_bloc" id="type_bloc" class="form-select" required>
+              <option value="" disabled selected>Choisir un type...</option>
+              <option value="bloc_checkbox_native">Case à cocher (natif)</option>
+              {% for type in types_bloc %}
+                <option value="{{ type.code }}">{{ type.libelle }}</option>
+              {% endfor %}
+            </select>
+          </div>
 
-  <p>Au survol d'un bloc dans la liste, celui ci se mettra en évidence sur la prévisualisation (peut ne pas fonctionner pour les images).</p>
+          <div id="div-type-bloc-data" class="mb-3"></div>
 
-  <p>Cliquez sur un bloc dans la liste pour le séléctionner, vous pouvez ensuite le déplacer à l'aide des flèches de votre clavier.
-    Appuyez sur la touche "Entrée" pour enregistrer sa nouvelle position.</p>
+          <button type="submit" class="btn btn-success w-100 py-2">
+            <i class="fa fa-plus-circle fa-fw"></i> Ajouter un nouveau bloc
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 
-  <p>L'ordre des blocs est celui définis par le tableau, le plus en haut est le plus en arrière-plan (et inversement).
-    Cet ordre est modifiable en faisant glisser les blocs dans le tableau.</p>
+  <div class="tab-pane fade" id="conditions" role="tabpanel">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/conditions.html.twig' with {'conditions': page.conditions, 'cible': 'page', 'page_id': page.id } %}
+      </div>
+    </div>
+  </div>
 
-  <p>Une <b>*</b> à côté d'un numéro de page signifie que cette page ne serait <b>pas visible pour l'élément sélectionné</b>.</p>
+  <div class="tab-pane fade" id="aide" role="tabpanel">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="alert alert-info py-2 small mb-3">
+          <i class="fa fa-info-circle me-2"></i>
+          Les dimensions se renseignent <b class="text-danger">en millimètre</b>.
+        </div>
+
+        <ul class="list-group list-group-flush small">
+          <li class="list-group-item d-flex align-items-start">
+            <i class="fa fa-mouse-pointer text-primary me-3 mt-1"></i>
+            <div>
+              Double-cliquez sur un bloc pour le sélectionner, déplacez-le, puis cliquez une fois pour valider sa position.
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-start">
+            <i class="fa fa-keyboard text-primary me-3 mt-1"></i>
+            <div>
+              Utilisez les flèches du clavier après avoir cliqué sur un bloc dans la liste pour un réglage précis. "Entrée" pour enregistrer.
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-start">
+            <i class="fa fa-mouse text-primary me-3 mt-1"></i>
+            <div>
+              Clic droit pour définir les coordonnées X et Y manuellement.
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-start">
+            <i class="fa fa-layer-group text-primary me-3 mt-1"></i>
+            <div>
+              L'ordre des blocs suit le tableau : le haut est en arrière-plan. Modifiez-le par glisser-déposer.
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-start">
+            <i class="fa fa-lock text-primary me-3 mt-1"></i>
+            <div>
+              Verrouillez un bloc pour empêcher son déplacement accidentel.
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-start">
+            <i class="fa fa-image text-primary me-3 mt-1"></i>
+            <div>
+              Utilisez l'import assisté du fond pour créer/mettre à jour rapidement le background de page.
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-start">
+            <i class="fa fa-th text-primary me-3 mt-1"></i>
+            <div>
+              Utilisez la grille et le snap pour aligner précisément les champs de formulaire.
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-start">
+            <i class="fa fa-check-square text-primary me-3 mt-1"></i>
+            <div>
+              Pour une case à cocher native, utilisez <b>Shift + clic</b> sur la prévisualisation.
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-start border-0">
+            <i class="fa fa-asterisk text-danger me-3 mt-1"></i>
+            <div>
+              Une astérisque (*) à côté d'une page indique qu'elle est invisible pour l'élément actuel.
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% macro showLignes(bloc, entity_id, page) %}
-  <tr id="bloc_{{ bloc.id }}" class="bloc-row" data-bloc-code="{{ bloc.code }}">
+  <tr id="bloc_{{ bloc.id }}" class="bloc-row{% if isBlocLocked(bloc) %} bloc-row-locked{% endif %}" data-bloc-code="{{ bloc.code }}">
     <td class="ordre" data-bloc-id="{{ bloc.id }}">{{ bloc.ordre }}</td>
-    <td>{{ bloc.libelle }}</td>
-    <td>{{ bloc.type.libelle }}</td>
+    <td class="fw-bold">{{ bloc.libelle }}</td>
+    <td><span class="badge bg-secondary opacity-75">{{ bloc.type.libelle }}</span></td>
     <td class="text-center">
-      <i class="fa fa-pen pointer edit-bloc"
+      <button class="btn btn-link btn-sm p-0 edit-bloc"
          data-url-edition="{{ path('conception_document_conception_tool_bloc_load_edition', {id: bloc.id, entityId: entity_id}) }}"
-         data-bloc-id="{{ bloc.id }}"></i>
-    </td>
-    <td>
-      <input type="checkbox" class="cbx-bloc" data-bloc-id="{{ bloc.id }}">
+         data-bloc-id="{{ bloc.id }}">
+        <i class="fa fa-pen text-primary"></i>
+      </button>
     </td>
     <td class="text-center">
-      <a href="{{ path('conception_document_conception_tool_bloc_duplicate', {pageId: page.id, entityId: entity_id, blocId: bloc.id}) }}">
-        <i class="fa fa-copy"></i>
+      <button class="btn btn-link btn-sm p-0 btn-toggle-lock"
+              data-bloc-id="{{ bloc.id }}"
+              data-locked="{% if isBlocLocked(bloc) %}1{% else %}0{% endif %}"
+              title="{% if isBlocLocked(bloc) %}Déverrouiller{% else %}Verrouiller{% endif %}">
+        <i class="fa {% if isBlocLocked(bloc) %}fa-lock text-danger{% else %}fa-unlock text-success{% endif %}"></i>
+      </button>
+    </td>
+    <td class="text-center">
+      <input type="checkbox" class="cbx-bloc form-check-input" data-bloc-id="{{ bloc.id }}">
+    </td>
+    <td class="text-center">
+      <a href="{{ path('conception_document_conception_tool_bloc_duplicate', {pageId: page.id, entityId: entity_id, blocId: bloc.id}) }}" class="btn btn-link btn-sm p-0">
+        <i class="fa fa-copy text-info"></i>
       </a>
     </td>
     <td class="text-center">
-      <a href="{{ path('conception_document_conception_tool_bloc_remove', {pageId: page.id, entityId: entity_id, blocId: bloc.id}) }}">
+      <a href="{{ path('conception_document_conception_tool_bloc_remove', {pageId: page.id, entityId: entity_id, blocId: bloc.id}) }}" class="btn btn-link btn-sm p-0" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce bloc ?')">
         <i class="fa fa-trash text-danger"></i>
       </a>
     </td>
-    <td class="text-center sortHandle">
-      <i class="fa fa-arrows-alt pointer"></i>
+    <td class="text-center sortHandle{% if isBlocLocked(bloc) %} text-muted{% endif %}">
+      <i class="fa fa-arrows-alt text-muted pointer"></i>
     </td>
   </tr>
 {% endmacro %}
 
 <script>
   $(document).ready(function(){
-    $("#default-tab").trigger('click');
-
+    // On ne déclenche plus manuellement le clic sur l'onglet par défaut car Bootstrap s'en occupe avec la classe 'active'
+    
     $("#table-blocs tbody").sortable({
       axis: 'y',
       handle: '.sortHandle',
+      cancel: '.bloc-row-locked',
       stop: updateIndex
     }).disableSelection();
   });

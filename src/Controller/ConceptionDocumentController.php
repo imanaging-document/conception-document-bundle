@@ -28,6 +28,12 @@ use ZipArchive;
 
 class ConceptionDocumentController extends AbstractController
 {
+  private const DEFAULT_DOCUMENT_FORMAT = ConceptionTemplateInterface::DOCUMENT_FORMAT_A4;
+  private const AVAILABLE_DOCUMENT_FORMATS = [
+    ConceptionTemplateInterface::DOCUMENT_FORMAT_A4,
+    ConceptionTemplateInterface::DOCUMENT_FORMAT_A3,
+  ];
+
   private EntityManagerInterface $em;
   private ConceptionDocument $conceptionDocument;
   private Environment $twig;
@@ -60,9 +66,13 @@ class ConceptionDocumentController extends AbstractController
    */
   public function index(): Response
   {
+    $conceptions = $this->em->getRepository(ConceptionTemplateInterface::class)->findAll();
+
     return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/index.html.twig", [
-      'conceptions' => $this->em->getRepository(ConceptionTemplateInterface::class)->findAll(),
+      'conceptions' => $conceptions,
       'types' => $this->em->getRepository(ConceptionTemplateTypeInterface::class)->findAll(),
+      'template_formats' => $this->getTemplateFormats($conceptions),
+      'available_formats' => self::AVAILABLE_DOCUMENT_FORMATS,
       'basePath' => $this->basePath
     ]));
   }
@@ -79,9 +89,11 @@ class ConceptionDocumentController extends AbstractController
       $className = $this->em->getRepository(ConceptionTemplateInterface::class)->getClassName();
       $template = new $className();
       if ($template instanceof ConceptionTemplateInterface){
+        $documentFormat = $this->normalizeDocumentFormat($params['document_format'] ?? null);
         $template->setLibelle($params['libelle']);
         $template->setType($type);
         $template->setActif(false);
+        $template->setDocumentFormat($documentFormat);
         $this->em->persist($template);
         $this->em->flush();
         $this->addFlash('success', 'Nouvelle conception ajoutée avec succès.');
@@ -92,6 +104,32 @@ class ConceptionDocumentController extends AbstractController
       $this->addFlash('error', 'Type de conception introuvable : '.$params['type']);
     }
     return $this->redirectToRoute('conception_document');
+  }
+
+  /**
+   * @param int $id
+   * @param Request $request
+   * @return Response
+   */
+  public function saveTemplateFormat(int $id, Request $request): Response
+  {
+    $template = $this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
+    if (!($template instanceof ConceptionTemplateInterface)) {
+      return $this->json([
+        'status' => 'error',
+        'message' => 'Conception introuvable'
+      ], 404);
+    }
+
+    $documentFormat = $this->normalizeDocumentFormat($request->request->get('document_format'));
+    $template->setDocumentFormat($documentFormat);
+    $this->em->persist($template);
+    $this->em->flush();
+
+    return $this->json([
+      'status' => 'success',
+      'document_format' => $documentFormat
+    ]);
   }
 
   /**
@@ -113,6 +151,29 @@ class ConceptionDocumentController extends AbstractController
       $this->addFlash('error', 'Impossible de supprimer cette conception : '.$id);
     }
     return $this->redirectToRoute('conception_document');
+  }
+
+  /**
+   * @param $id
+   * @return Response
+   */
+  public function toggleActif($id): Response
+  {
+    $template = $this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
+    if ($template instanceof ConceptionTemplateInterface) {
+      $template->setActif(!$template->isActif());
+      $this->em->flush();
+
+      return $this->json([
+        'status' => 'success',
+        'actif' => $template->isActif()
+      ]);
+    }
+
+    return $this->json([
+      'status' => 'error',
+      'message' => 'Conception introuvable'
+    ], 404);
   }
 
   public function uploadYaml($id)
@@ -193,6 +254,7 @@ class ConceptionDocumentController extends AbstractController
 
       $yamlContent = [
         'libelle' => $template->getLibelle(),
+        'document_format' => $this->getTemplateFormat($template),
         'pages' => $pages
       ];
 
@@ -254,6 +316,8 @@ class ConceptionDocumentController extends AbstractController
           if (file_exists($yamlFile)){
             // Ici le fichier ZIP est correctement dézippé
             $data = Yaml::parseFile($yamlFile);
+            $template->setDocumentFormat($this->normalizeDocumentFormat($data['document_format'] ?? null));
+            $this->em->persist($template);
             foreach ($template->getPages() as $page){
               if ($page instanceof ConceptionPageInterface){
                 foreach ($page->getBlocs() as $bloc){
@@ -486,6 +550,7 @@ class ConceptionDocumentController extends AbstractController
       return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/conception.html.twig", [
         'page' => $page,
         'entity_id' => $entityId,
+        'page_format' => $this->getTemplateFormat($template),
         'basePath' => $this->basePath
       ]));
     } else {
@@ -571,12 +636,14 @@ class ConceptionDocumentController extends AbstractController
             $this->addFlash('error', $template->getType()->getTargetEntity().' introuvable : '.$entityId);
             return $this->redirectToRoute('conception_document');
           }
+
         }
 
         return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/document.html.twig", [
           'page' => $page,
           'entity_id' => $entityId,
           'conception_document' => $conceptionDocument,
+          'page_format' => $this->getTemplateFormat($template),
           'preshow' => true,
           'basePath' => $this->basePath,
         ]));
@@ -608,6 +675,7 @@ class ConceptionDocumentController extends AbstractController
         return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/gestion-des-blocs.html.twig", [
           'page' => $page,
           'entity_id' => $entityId,
+          'page_format' => $this->getTemplateFormat($template),
           'types_bloc' => $this->em->getRepository(ConceptionBlocTypeInterface::class)->findAll(),
           'types_conditions' => $className::getTypesConditions(),
           'types_comparaisons' => $className::getTypesComparaisons(),
@@ -634,6 +702,9 @@ class ConceptionDocumentController extends AbstractController
     $page = $this->em->getRepository(ConceptionPageInterface::class)->find($pageId);
     if ($page instanceof ConceptionPageInterface){
       $params = $request->request->all();
+      if (($params['type_bloc'] ?? '') === 'bloc_checkbox_native') {
+        return $this->addNativeCheckboxBloc($page, $entityId, $params);
+      }
 
       $typeBloc = $this->em->getRepository(ConceptionBlocTypeInterface::class)->findOneBy(['code' => $params['type_bloc']]);
       if ($typeBloc instanceof ConceptionBlocTypeInterface){
@@ -696,6 +767,182 @@ class ConceptionDocumentController extends AbstractController
       $this->addFlash('error', 'Page introuvable : '.$pageId);
     }
     return $this->redirectToRoute('conception_document');
+  }
+
+  private function addNativeCheckboxBloc(ConceptionPageInterface $page, int|string $entityId, array $params): Response
+  {
+    $typeBlocTexte = $this->em->getRepository(ConceptionBlocTypeInterface::class)->findOneBy(['code' => 'bloc_texte']);
+    if (!($typeBlocTexte instanceof ConceptionBlocTypeInterface)) {
+      $this->addFlash('error', 'Le type de bloc "bloc_texte" est requis pour créer une case à cocher.');
+      return $this->redirectToRoute('conception_document_conception_tool', [
+        'id' => $page->getTemplate()->getId(),
+        'entityId' => $entityId,
+        'pageNumber' => $page->getOrdre()
+      ]);
+    }
+
+    $className = $typeBlocTexte->getEntity();
+    $bloc = new $className();
+    $bloc->setPage($page);
+    $bloc->setType($typeBlocTexte);
+    $bloc->setLibelle(trim((string)($params['libelle'] ?? 'Case à cocher')));
+    $checked = $this->isTruthy($params['checkbox_checked'] ?? false);
+    $bloc->setTexte($checked ? 'X' : '');
+    $bloc->setModeRaw(false);
+    $this->em->persist($bloc);
+
+    $stylesToCreate = $bloc->getStylesToCreate();
+    foreach ($stylesToCreate as $style){
+      $this->em->persist($style);
+    }
+
+    $rootStyle = $bloc->getStyleByCode('root');
+    if ($rootStyle instanceof ConceptionBlocStyleInterface){
+      $properties = $rootStyle->getDecodedStyle();
+      if (!is_array($properties)) {
+        $properties = [];
+      }
+      $properties['width'] = '4mm';
+      $properties['height'] = '4mm';
+      $properties['padding'] = '0';
+      $properties['display'] = 'flex';
+      $properties['align-items'] = 'center';
+      $properties['justify-content'] = 'center';
+      $properties['text-align'] = 'center';
+      $properties['line-height'] = '1';
+      $properties['font-size'] = '10px';
+      $properties['font-weight'] = '700';
+      $properties['border'] = '0.3mm solid #000';
+      $properties['background-color'] = 'transparent';
+      $properties['cursor'] = 'pointer';
+      $properties['user-select'] = 'none';
+      $properties['--bundle-checkbox-native'] = '1';
+      $properties['--bundle-checkbox-checked'] = $checked ? '1' : '0';
+      $properties['--bundle-lock'] = '0';
+      $rootStyle->setStyle(json_encode($properties));
+      $this->em->persist($rootStyle);
+    }
+
+    $this->em->flush();
+    $this->addFlash('success', 'Case à cocher ajoutée avec succès.');
+
+    return $this->redirectToRoute('conception_document_conception_tool', [
+      'id' => $page->getTemplate()->getId(),
+      'entityId' => $entityId,
+      'pageNumber' => $page->getOrdre()
+    ]);
+  }
+
+  /**
+   * @param int $pageId
+   * @param int|string $entityId
+   * @param Request $request
+   * @return Response
+   */
+  public function importBackgroundAssisted(int $pageId, int|string $entityId, Request $request): Response
+  {
+    $page = $this->em->getRepository(ConceptionPageInterface::class)->find($pageId);
+    if (!($page instanceof ConceptionPageInterface)) {
+      $this->addFlash('error', 'Page introuvable : '.$pageId);
+      return $this->redirectToRoute('conception_document');
+    }
+
+    $files = $request->files->all();
+    $backgroundImage = $files['background_image'] ?? null;
+    if (!($backgroundImage instanceof UploadedFile)) {
+      $this->addFlash('error', 'Veuillez sélectionner une image de fond.');
+      return $this->redirectToRoute('conception_document_conception_tool', [
+        'id' => $page->getTemplate()->getId(),
+        'entityId' => $entityId,
+        'pageNumber' => $page->getOrdre()
+      ]);
+    }
+
+    $mimeType = strtolower((string)$backgroundImage->getMimeType());
+    if (strpos($mimeType, 'image/') !== 0) {
+      $this->addFlash('error', 'Le fichier de fond doit être une image.');
+      return $this->redirectToRoute('conception_document_conception_tool', [
+        'id' => $page->getTemplate()->getId(),
+        'entityId' => $entityId,
+        'pageNumber' => $page->getOrdre()
+      ]);
+    }
+
+    $relativeDir = '/template-'.$page->getTemplate()->getId(). '/page-'.$page->getId().'/images/';
+    $imagesDir = $this->uploadPath . $relativeDir;
+    if (!is_dir($imagesDir)) {
+      mkdir($imagesDir, 0755, true);
+    }
+
+    $extension = strtolower((string)$backgroundImage->guessExtension());
+    if ($extension === '') {
+      $extension = strtolower((string)$backgroundImage->getClientOriginalExtension());
+    }
+    $extension = (string)preg_replace('/[^a-z0-9]/', '', $extension);
+    if ($extension === '') {
+      $extension = 'png';
+    }
+    $filename = 'background-page-'.$page->getOrdre().'-'.str_replace('.', '', uniqid('', true)).'.'.$extension;
+
+    try {
+      $backgroundImage->move($imagesDir, $filename);
+    } catch (Exception $e) {
+      $this->addFlash('error', 'Une erreur est survenue lors de l\'import du fond : '.$e->getMessage());
+      return $this->redirectToRoute('conception_document_conception_tool', [
+        'id' => $page->getTemplate()->getId(),
+        'entityId' => $entityId,
+        'pageNumber' => $page->getOrdre()
+      ]);
+    }
+
+    $relativePath = $relativeDir.$filename;
+    $backgroundBloc = null;
+    foreach ($page->getBlocs() as $bloc) {
+      if ($bloc instanceof ConceptionBlocInterface && $this->isBackgroundBloc($bloc)) {
+        $backgroundBloc = $bloc;
+        break;
+      }
+    }
+
+    if (!($backgroundBloc instanceof ConceptionBlocInterface)) {
+      $typeBlocImage = $this->em->getRepository(ConceptionBlocTypeInterface::class)->findOneBy(['code' => 'bloc_image']);
+      if (!($typeBlocImage instanceof ConceptionBlocTypeInterface)) {
+        $this->addFlash('error', 'Le type de bloc "bloc_image" est requis pour l\'import assisté du fond.');
+        return $this->redirectToRoute('conception_document_conception_tool', [
+          'id' => $page->getTemplate()->getId(),
+          'entityId' => $entityId,
+          'pageNumber' => $page->getOrdre()
+        ]);
+      }
+
+      $className = $typeBlocImage->getEntity();
+      $backgroundBloc = new $className();
+      $backgroundBloc->setPage($page);
+      $backgroundBloc->setType($typeBlocImage);
+      $backgroundBloc->setLibelle('Fond de page (assisté)');
+      $backgroundBloc->setOrdre(1);
+      $backgroundBloc->setPath($relativePath);
+      $this->em->persist($backgroundBloc);
+
+      $stylesToCreate = $backgroundBloc->getStylesToCreate();
+      foreach ($stylesToCreate as $style){
+        $this->em->persist($style);
+      }
+    } else {
+      $backgroundBloc->setPath($relativePath);
+      $this->em->persist($backgroundBloc);
+    }
+
+    $pageDimensions = $this->getPageDimensionsMm($page->getTemplate());
+    $this->applyBackgroundStyle($backgroundBloc, $pageDimensions['width'], $pageDimensions['height']);
+    $this->em->flush();
+    $this->addFlash('success', 'Fond de page importé avec succès.');
+
+    return $this->redirectToRoute('conception_document_conception_tool', [
+      'id' => $page->getTemplate()->getId(),
+      'entityId' => $entityId,
+      'pageNumber' => $page->getOrdre()
+    ]);
   }
 
   /**
@@ -772,6 +1019,8 @@ class ConceptionDocumentController extends AbstractController
     switch ($params['typeBloc']){
       case 'bloc_texte':
         return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/partials/bloc-generique/bloc-texte.html.twig"));
+      case 'bloc_checkbox_native':
+        return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/partials/bloc-generique/bloc-checkbox-native.html.twig"));
       case 'bloc_image':
         return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/partials/bloc-generique/bloc-image.html.twig"));
       case 'formes_predefinies':
@@ -821,6 +1070,9 @@ class ConceptionDocumentController extends AbstractController
     $params = $request->request->all();
     $bloc = $this->em->getRepository(ConceptionBlocInterface::class)->find($params['bloc_id']);
     if ($bloc instanceof ConceptionBlocInterface){
+      if ($this->isBlocLocked($bloc)) {
+        return $this->json(['error_message' => 'Ce bloc est verrouillé.'], 409);
+      }
       $rootStyle = $bloc->getStyleByCode('root');
       if ($rootStyle instanceof ConceptionBlocStyleInterface){
         $properties = json_decode($rootStyle->getStyle(), true);
@@ -866,6 +1118,84 @@ class ConceptionDocumentController extends AbstractController
   }
 
   /**
+   * @param Request $request
+   * @return Response
+   */
+  public function saveBlocLock(Request $request): Response
+  {
+    $params = $request->request->all();
+    $bloc = $this->em->getRepository(ConceptionBlocInterface::class)->find($params['bloc_id'] ?? null);
+    if (!($bloc instanceof ConceptionBlocInterface)) {
+      return $this->json(['error_message' => 'Bloc introuvable : '.($params['bloc_id'] ?? '')], 500);
+    }
+
+    $rootStyle = $this->getRootStyle($bloc);
+    if (!($rootStyle instanceof ConceptionBlocStyleInterface)) {
+      return $this->json(['error_message' => 'Style root introuvable pour le bloc : '.$bloc->getId()], 500);
+    }
+
+    $locked = $this->isTruthy($params['locked'] ?? false);
+    $properties = $rootStyle->getDecodedStyle();
+    if (!is_array($properties)) {
+      $properties = [];
+    }
+    $properties['--bundle-lock'] = $locked ? '1' : '0';
+    $rootStyle->setStyle(json_encode($properties));
+    $this->em->persist($rootStyle);
+    $this->em->flush();
+
+    return $this->json([
+      'locked' => $locked,
+      'bloc_id' => $bloc->getId()
+    ]);
+  }
+
+  /**
+   * @param Request $request
+   * @return Response
+   */
+  public function saveBlocCheckboxState(Request $request): Response
+  {
+    $params = $request->request->all();
+    $bloc = $this->em->getRepository(ConceptionBlocInterface::class)->find($params['bloc_id'] ?? null);
+    if (!($bloc instanceof ConceptionBlocInterface)) {
+      return $this->json(['error_message' => 'Bloc introuvable : '.($params['bloc_id'] ?? '')], 500);
+    }
+
+    if (!$this->isNativeCheckboxBloc($bloc)) {
+      return $this->json(['error_message' => 'Ce bloc n\'est pas une case à cocher native.'], 400);
+    }
+
+    if ($this->isBlocLocked($bloc)) {
+      return $this->json(['error_message' => 'Ce bloc est verrouillé.'], 409);
+    }
+
+    $rootStyle = $this->getRootStyle($bloc);
+    if (!($rootStyle instanceof ConceptionBlocStyleInterface)) {
+      return $this->json(['error_message' => 'Style root introuvable pour le bloc : '.$bloc->getId()], 500);
+    }
+
+    $checked = $this->isTruthy($params['checked'] ?? false);
+    $properties = $rootStyle->getDecodedStyle();
+    if (!is_array($properties)) {
+      $properties = [];
+    }
+    $properties['--bundle-checkbox-checked'] = $checked ? '1' : '0';
+    $rootStyle->setStyle(json_encode($properties));
+    $bloc->setTexte($checked ? 'X' : '');
+    $bloc->setModeRaw(false);
+
+    $this->em->persist($rootStyle);
+    $this->em->persist($bloc);
+    $this->em->flush();
+
+    return $this->json([
+      'checked' => $checked,
+      'bloc_id' => $bloc->getId()
+    ]);
+  }
+
+  /**
    * @return Response
    */
   public function loadBlocEdition($id, $entityId)
@@ -880,7 +1210,7 @@ class ConceptionDocumentController extends AbstractController
         'types_comparaisons' => $className::getTypesComparaisons(),
       ]));
     } else {
-      return $this->json(['error_message' => 'Bloc introuvable : '.$params['bloc_id']], 500);
+      return $this->json(['error_message' => 'Bloc introuvable : '.$id], 500);
     }
   }
 
@@ -916,6 +1246,46 @@ class ConceptionDocumentController extends AbstractController
         return $this->json([]);
       } else {
         return $this->json(['error_message' => 'Pas un bloc texte : '.$params['bloc_id']], 500);
+      }
+    } else {
+      return $this->json(['error_message' => 'Bloc introuvable : '.$params['bloc_id']], 500);
+    }
+  }
+
+  /**
+   * @param Request $request
+   * @return Response
+   */
+  public function saveBlocImage(Request $request)
+  {
+    $params = $request->request->all();
+    $bloc = $this->em->getRepository(ConceptionBlocInterface::class)->find($params['bloc_id']);
+    if ($bloc instanceof ConceptionBlocInterface){
+      if ($bloc->getType()->getCode() == 'bloc_image'){
+        $files = $request->files->all();
+        $image = $files['image'];
+        if ($image instanceof UploadedFile){
+          $page = $bloc->getPage();
+          $relativeDir = '/template-'.$page->getTemplate()->getId(). '/page-'.$page->getId().'/images/';
+          $imagesDir = $this->uploadPath . $relativeDir;
+          if (!is_dir($imagesDir)) {
+            mkdir($imagesDir, 0755, true);
+          }
+
+          $fileName = $image->getClientOriginalName();
+          if ($image->move($imagesDir, $fileName)){
+            $bloc->setPath($relativeDir.$fileName);
+            $this->em->persist($bloc);
+            $this->em->flush();
+            return $this->json(['new_path' => $relativeDir.$fileName]);
+          } else {
+            return $this->json(['error_message' => 'Une erreur est survenue lors du déplacement de l\'image dans le dossier de destination'], 500);
+          }
+        } else {
+          return $this->json(['error_message' => 'Veuillez sélectionner une image.'], 500);
+        }
+      } else {
+        return $this->json(['error_message' => 'Pas un bloc image : '.$params['bloc_id']], 500);
       }
     } else {
       return $this->json(['error_message' => 'Bloc introuvable : '.$params['bloc_id']], 500);
@@ -971,6 +1341,9 @@ class ConceptionDocumentController extends AbstractController
       foreach ($params['blocs_ids'] as $blocId){
         $bloc = $this->em->getRepository(ConceptionBlocInterface::class)->find($blocId);
         if ($bloc instanceof ConceptionBlocInterface){
+          if ($this->isBlocLocked($bloc)) {
+            continue;
+          }
           $rootStyle = $bloc->getStyleByCode('root');
           if ($rootStyle instanceof ConceptionBlocStyleInterface){
             switch ($params['type_action']){
@@ -1171,7 +1544,7 @@ class ConceptionDocumentController extends AbstractController
         'anomalies' => $anomalies
       ]));
     } else {
-      return $this->json(['error_message' => 'Bloc introuvable : '.$params['bloc_id']], 500);
+      return $this->json(['error_message' => 'Page introuvable : '.$id], 500);
     }
   }
 
@@ -1203,13 +1576,181 @@ class ConceptionDocumentController extends AbstractController
         $this->addFlash('error', $res['error_message']);
       }
       return $this->redirectToRoute('conception_document_conception_tool', [
-        'id' => $templateId,
+        'id' => $template->getId(),
         'entityId' => $entityId,
-        'pageNumber' => $pageId
+        'pageNumber' => 1
       ]);
     } else {
       $this->addFlash('error', 'Template introuvable : '.$id);
     }
     return $this->redirectToRoute('conception_document');
+  }
+
+  private function getTemplateFormats(array $templates): array
+  {
+    $templateFormats = [];
+    foreach ($templates as $template) {
+      if ($template instanceof ConceptionTemplateInterface) {
+        $templateFormats[$template->getId()] = $this->getTemplateFormat($template);
+      }
+    }
+
+    return $templateFormats;
+  }
+
+  private function getTemplateFormat(ConceptionTemplateInterface $template): string
+  {
+    return $this->normalizeDocumentFormat($template->getDocumentFormat());
+  }
+
+  private function getPageDimensionsMm(ConceptionTemplateInterface $template): array
+  {
+    $documentFormat = $this->getTemplateFormat($template);
+    if ($documentFormat === ConceptionTemplateInterface::DOCUMENT_FORMAT_A3) {
+      return ['width' => 420, 'height' => 297];
+    }
+
+    return ['width' => 210, 'height' => 297];
+  }
+
+  private function getRootStyle(ConceptionBlocInterface $bloc): ?ConceptionBlocStyleInterface
+  {
+    if (!method_exists($bloc, 'getStyleByCode')) {
+      return null;
+    }
+
+    $rootStyle = $bloc->getStyleByCode('root');
+    if ($rootStyle instanceof ConceptionBlocStyleInterface) {
+      return $rootStyle;
+    }
+
+    return null;
+  }
+
+  private function isBlocLocked(ConceptionBlocInterface $bloc): bool
+  {
+    $rootStyle = $this->getRootStyle($bloc);
+    if (!($rootStyle instanceof ConceptionBlocStyleInterface)) {
+      return false;
+    }
+
+    $properties = $rootStyle->getDecodedStyle();
+    if (!is_array($properties)) {
+      return false;
+    }
+
+    return $this->isTruthy($properties['--bundle-lock'] ?? false);
+  }
+
+  private function isNativeCheckboxBloc(ConceptionBlocInterface $bloc): bool
+  {
+    if (!method_exists($bloc, 'getType') || !method_exists($bloc->getType(), 'getCode')) {
+      return false;
+    }
+
+    if ($bloc->getType()->getCode() !== 'bloc_texte') {
+      return false;
+    }
+
+    $rootStyle = $this->getRootStyle($bloc);
+    if (!($rootStyle instanceof ConceptionBlocStyleInterface)) {
+      return false;
+    }
+
+    $properties = $rootStyle->getDecodedStyle();
+    if (!is_array($properties)) {
+      return false;
+    }
+
+    return $this->isTruthy($properties['--bundle-checkbox-native'] ?? false);
+  }
+
+  private function isBackgroundBloc(ConceptionBlocInterface $bloc): bool
+  {
+    if (!method_exists($bloc, 'getType') || !method_exists($bloc->getType(), 'getCode')) {
+      return false;
+    }
+    if ($bloc->getType()->getCode() !== 'bloc_image') {
+      return false;
+    }
+
+    $rootStyle = $this->getRootStyle($bloc);
+    if ($rootStyle instanceof ConceptionBlocStyleInterface) {
+      $properties = $rootStyle->getDecodedStyle();
+      if (is_array($properties) && $this->isTruthy($properties['--bundle-background'] ?? false)) {
+        return true;
+      }
+    }
+
+    return stripos($bloc->getLibelle(), 'fond de page') === 0;
+  }
+
+  private function applyBackgroundStyle(ConceptionBlocInterface $bloc, int $widthMm, int $heightMm): void
+  {
+    $rootStyle = $this->ensureRootStyle($bloc);
+    if (!($rootStyle instanceof ConceptionBlocStyleInterface)) {
+      return;
+    }
+
+    $properties = $rootStyle->getDecodedStyle();
+    if (!is_array($properties)) {
+      $properties = [];
+    }
+
+    $properties['position'] = 'absolute';
+    $properties['left'] = '0mm';
+    $properties['top'] = '0mm';
+    $properties['width'] = $widthMm.'mm';
+    $properties['height'] = $heightMm.'mm';
+    $properties['margin'] = '0';
+    $properties['padding'] = '0';
+    $properties['display'] = 'block';
+    $properties['max-width'] = 'none';
+    $properties['max-height'] = 'none';
+    $properties['z-index'] = '0';
+    $properties['object-fit'] = 'fill';
+    $properties['opacity'] = '1';
+    $properties['--bundle-background'] = '1';
+    $properties['--bundle-lock'] = '1';
+    $rootStyle->setStyle(json_encode($properties));
+    $this->em->persist($rootStyle);
+  }
+
+  private function ensureRootStyle(ConceptionBlocInterface $bloc): ?ConceptionBlocStyleInterface
+  {
+    $rootStyle = $this->getRootStyle($bloc);
+    if ($rootStyle instanceof ConceptionBlocStyleInterface) {
+      return $rootStyle;
+    }
+
+    $className = $this->em->getRepository(ConceptionBlocStyleInterface::class)->getClassName();
+    $defaultStyle = [
+      'position' => 'absolute',
+      'left' => '0mm',
+      'top' => '0mm',
+      'width' => '0mm',
+      'height' => '0mm',
+      'z-index' => '0',
+    ];
+    $rootStyle = new $className($bloc, 'root', 'Racine', json_encode($defaultStyle));
+    $this->em->persist($rootStyle);
+
+    return $rootStyle;
+  }
+
+  private function isTruthy(mixed $value): bool
+  {
+    $normalized = strtolower(trim((string)$value));
+    return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+  }
+
+  private function normalizeDocumentFormat(?string $documentFormat): string
+  {
+    $normalizedFormat = strtoupper(trim((string)$documentFormat));
+    if (in_array($normalizedFormat, self::AVAILABLE_DOCUMENT_FORMATS, true)) {
+      return $normalizedFormat;
+    }
+
+    return self::DEFAULT_DOCUMENT_FORMAT;
   }
 }

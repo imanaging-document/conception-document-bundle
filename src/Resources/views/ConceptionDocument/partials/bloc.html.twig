@@ -2,17 +2,34 @@
   {{ bloc.css|raw }}
 </style>
 {% if bloc.type.code == 'bloc_image' %}
-  <img id="{{ bloc.code }}" alt="logo-client" src="{{ getImageBinary(bloc.path) }}" class="bloc-element" data-bloc-id="{{ bloc.id }}" />
+  {% set is_background_bloc = isBackgroundBloc(bloc) %}
+  <img id="{{ bloc.code }}"
+       alt="logo-client"
+       src="{{ getImageBinary(bloc.path) }}"
+       class="bloc-element{% if isBlocLocked(bloc) %} bloc-locked{% endif %}{% if is_background_bloc %} bloc-background-assisted{% endif %}"
+       data-bloc-id="{{ bloc.id }}"
+       data-bloc-locked="{% if isBlocLocked(bloc) %}1{% else %}0{% endif %}"
+       {% if is_background_bloc %}style="position:absolute !important; left:0 !important; top:0 !important; width:100% !important; height:100% !important; max-width:none !important; max-height:none !important; object-fit:fill !important; z-index:0 !important; margin:0 !important; padding:0 !important;"{% endif %} />
 {% elseif bloc.type.code == 'bloc_texte' %}
-  <div id="{{ bloc.code }}" class="bloc-element" data-bloc-id="{{ bloc.id }}">
-    {% if bloc.modeRaw %}
-      {{ personnalizeText(bloc.texte, conception_document)|raw }}
-    {% else %}
-      {{ personnalizeText(bloc.texte, conception_document) }}
-    {% endif %}
-  </div>
+  {% if isNativeCheckboxBloc(bloc) %}
+    <div id="{{ bloc.code }}"
+         class="bloc-element bloc-checkbox-native{% if isBlocLocked(bloc) %} bloc-locked{% endif %}"
+         data-bloc-id="{{ bloc.id }}"
+         data-bloc-locked="{% if isBlocLocked(bloc) %}1{% else %}0{% endif %}"
+         data-checkbox-checked="{% if isNativeCheckboxChecked(bloc) %}1{% else %}0{% endif %}">
+      {% if isNativeCheckboxChecked(bloc) %}X{% endif %}
+    </div>
+  {% else %}
+    <div id="{{ bloc.code }}" class="bloc-element{% if isBlocLocked(bloc) %} bloc-locked{% endif %}" data-bloc-id="{{ bloc.id }}" data-bloc-locked="{% if isBlocLocked(bloc) %}1{% else %}0{% endif %}">
+      {% if bloc.modeRaw %}
+        {{ personnalizeText(bloc.texte, conception_document)|raw }}
+      {% else %}
+        {{ personnalizeText(bloc.texte, conception_document) }}
+      {% endif %}
+    </div>
+  {% endif %}
 {% elseif bloc.type.code == 'formes_predefinies' %}
-  <div id="{{ bloc.code }}" class="bloc-element" data-bloc-id="{{ bloc.id }}"></div>
+  <div id="{{ bloc.code }}" class="bloc-element{% if isBlocLocked(bloc) %} bloc-locked{% endif %}" data-bloc-id="{{ bloc.id }}" data-bloc-locked="{% if isBlocLocked(bloc) %}1{% else %}0{% endif %}"></div>
 {% else %}
   {{ renderBloc(bloc, conception_document)|raw }}
 {% endif %}

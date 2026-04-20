@@ -10,6 +10,9 @@ namespace Imanaging\ConceptionDocumentBundle\Interfaces;
 
 interface ConceptionTemplateInterface
 {
+  public const DOCUMENT_FORMAT_A4 = 'A4';
+  public const DOCUMENT_FORMAT_A3 = 'A3';
+
   public function getId(): int;
 
   public function setId(int $id);
@@ -29,4 +32,8 @@ interface ConceptionTemplateInterface
   public function getPages();
 
   public function setPages($pages);
+
+  public function getDocumentFormat(): string;
+
+  public function setDocumentFormat(string $documentFormat);
 }

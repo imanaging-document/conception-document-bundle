@@ -1,20 +1,96 @@
 {% block body %}
-  <style>
-      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap');
-      @import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap');
-  </style>
+  {% set normalized_page_format = page_format|default('A4')|upper %}
+  {% set is_a3_landscape = normalized_page_format == 'A3' %}
+  {% set page_width_mm = is_a3_landscape ? 420 : 210 %}
+  {% set page_height_mm = 297 %}
 
-  <head>
-    <meta charset="UTF-8" />
-  </head>
+  {% if preshow %}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap');
 
-  <body>
-  {% for bloc in page.blocs %}
-    {% if canShowBloc(bloc.getConditions(), conception_document) %}
-      {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/bloc.html.twig' with {'bloc' : bloc, 'preshow': preshow} %}
-    {% endif %}
-  {% endfor %}
-  </body>
+        .document-preview-shell {
+            position: relative;
+            margin: 0 auto;
+            overflow: hidden;
+            border: 1px solid #ced4da;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            background: #fff;
+        }
+
+        .document-sheet {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: {{ page_width_mm }}mm;
+            height: {{ page_height_mm }}mm;
+            overflow: hidden;
+            box-sizing: border-box;
+            background: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+    </style>
+
+    <div class="document-preview-shell"
+         data-page-width-mm="{{ page_width_mm }}"
+         data-page-height-mm="{{ page_height_mm }}">
+      <div class="document-sheet">
+        {% for bloc in page.blocs %}
+          {% if canShowBloc(bloc.getConditions(), conception_document) %}
+            {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/bloc.html.twig' with {'bloc' : bloc, 'preshow': preshow} %}
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <!DOCTYPE html>
+    <html lang="fr">
+      <head>
+        <meta charset="UTF-8" />
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap');
+
+            @page {
+                size: {{ normalized_page_format }} {% if is_a3_landscape %}landscape{% endif %};
+                margin: 0;
+            }
+
+            html, body {
+                margin: 0;
+                padding: 0;
+                width: {{ page_width_mm }}mm;
+                height: {{ page_height_mm }}mm;
+                overflow: hidden;
+            }
+
+            body {
+                background: #fff;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+
+            .document-sheet {
+                position: relative;
+                width: {{ page_width_mm }}mm;
+                height: {{ page_height_mm }}mm;
+                overflow: hidden;
+                box-sizing: border-box;
+                background: #fff;
+            }
+        </style>
+      </head>
+
+      <body>
+        <div class="document-sheet">
+          {% for bloc in page.blocs %}
+            {% if canShowBloc(bloc.getConditions(), conception_document) %}
+              {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/bloc.html.twig' with {'bloc' : bloc, 'preshow': preshow} %}
+            {% endif %}
+          {% endfor %}
+        </div>
+      </body>
+    </html>
+  {% endif %}
 
   {% if preshow %}
     <script>

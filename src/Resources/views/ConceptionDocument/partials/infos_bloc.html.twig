@@ -1,134 +1,134 @@
-<h4 class="text-info">Informations générales</h4>
-<div>
-  Libellé du bloc : <b class="bloc-libelle-data" data-bloc-id="{{ bloc.id }}">{{ bloc.libelle }}</b>
-  <span class="bloc-libelle-update" data-bloc-id="{{ bloc.id }}" data-libelle="{{ bloc.libelle }}"><i class="fa fa-pen text-info pointer"></i></span>
-</div>
-<hr>
-{% if bloc.type.code == 'bloc_image' %}
-  <div>
-    Type : <b>Image</b>
+<div class="card border-info mb-4 shadow-sm">
+  <div class="card-header bg-info text-white d-flex justify-content-between align-items-center py-2">
+    <h5 class="mb-0"><i class="fa fa-info-circle me-2"></i>Informations générales</h5>
+    <span class="badge bg-light text-info">{{ bloc.type.libelle }}</span>
   </div>
-  <hr>
-  <div>
-    Image :
-  </div>
-  <hr>
-  <div>
-    <img src="{{ getImageBinary(bloc.path) }}" alt="image" style="width: 100px; margin-top: 10px;">
-  </div>
-{% elseif bloc.type.code == 'bloc_texte' %}
-  <div>
-    Type :  <b>Texte</b>
-  </div>
-  <hr>
-  <div>
-    Mode RAW <small>(Le mode raw permet d'interpréter le code HTML)</small>
-    <div>
-      <label class="switch">
-        <input class="cbx-mode-raw" data-bloc-id="{{ bloc.id }}" type="checkbox" {% if bloc.modeRaw %}checked{% endif %}>
-        <span class="slider round"></span>
-      </label>
+  <div class="card-body py-3">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <label class="text-muted small d-block mb-1">Libellé du bloc</label>
+        <div class="d-flex align-items-center">
+          <h4 class="mb-0 bloc-libelle-data me-2" data-bloc-id="{{ bloc.id }}">{{ bloc.libelle }}</h4>
+          <button class="btn btn-outline-info btn-sm border-0 bloc-libelle-update" data-bloc-id="{{ bloc.id }}" data-libelle="{{ bloc.libelle }}">
+            <i class="fa fa-pen"></i>
+          </button>
+        </div>
+      </div>
+      <div class="col-md-4 text-end">
+        {% if bloc.type.code == 'bloc_image' %}
+          <div class="bg-light p-2 rounded border d-inline-block position-relative">
+            <img src="{{ getImageBinary(bloc.path) }}" alt="image" style="max-height: 60px; max-width: 100%;" class="bloc-image-preview" data-bloc-id="{{ bloc.id }}">
+            <div class="position-absolute top-0 start-100 translate-middle">
+              <button class="btn btn-sm btn-primary rounded-circle shadow-sm bloc-image-update" data-bloc-id="{{ bloc.id }}" title="Changer l'image">
+                <i class="fa fa-pen fa-xs"></i>
+              </button>
+              <input type="file" class="d-none bloc-image-input" data-bloc-id="{{ bloc.id }}" accept="image/*">
+            </div>
+          </div>
+        {% endif %}
+      </div>
     </div>
-  </div>
-  <hr>
-  <div>
-    Texte : <b class="bloc-texte-data" data-bloc-id="{{ bloc.id }}">{{ bloc.texte }}</b>
-    <span class="bloc-texte-update" data-bloc-id="{{ bloc.id }}" data-texte="{{ bloc.texte }}"><i class="fa fa-pen text-info pointer"></i></span>
-  </div>
-  <hr>
-{% elseif bloc.type.code == 'bloc_tableau_rubriques' %}
-  <div>
-    Type : <b>Tableau de rubriques</b>
-  </div>
-  <hr>
-  <div>
-    Nombre de rubriques maximum :
-    {% if bloc.nbRubriquesMax is not null %}
-      <b>{{ bloc.nbRubriquesMax }}</b>
-    {% else %}
-      <b>Non défini</b>
+
+    {% if bloc.type.code == 'bloc_texte' %}
+      <div class="mt-3 pt-3 border-top">
+        <div class="row align-items-center">
+          <div class="col-sm-6">
+            <div class="d-flex align-items-center">
+              <div class="form-check form-switch me-3">
+                <input class="form-check-input cbx-mode-raw" type="checkbox" id="modeRaw_{{ bloc.id }}" data-bloc-id="{{ bloc.id }}" {% if bloc.modeRaw %}checked{% endif %}>
+                <label class="form-check-label small" for="modeRaw_{{ bloc.id }}">Mode RAW <i class="fa fa-question-circle text-muted ms-1" title="Permet d'interpréter le code HTML"></i></label>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <label class="text-muted small d-block mb-1">Texte</label>
+            <div class="d-flex align-items-center">
+              <span class="text-truncate fw-bold bloc-texte-data" style="max-width: 200px;" data-bloc-id="{{ bloc.id }}">{{ bloc.texte }}</span>
+              <button class="btn btn-outline-info btn-sm border-0 bloc-texte-update ms-2" data-bloc-id="{{ bloc.id }}" data-texte="{{ bloc.texte }}">
+                <i class="fa fa-pen"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% elseif bloc.type.code == 'bloc_tableau_rubriques' %}
+      <div class="mt-3 pt-3 border-top small">
+        <span class="text-muted">Nombre de rubriques maximum :</span>
+        <span class="fw-bold ms-2">{{ bloc.nbRubriquesMax ?: 'Non défini' }}</span>
+      </div>
+    {% elseif bloc.type.code != 'bloc_image' %}
+      <div class="mt-3 pt-3 border-top">
+        {{ showCustomBlocEdition(bloc)|raw }}
+      </div>
     {% endif %}
   </div>
-  <hr>
-{% else %}
-  <div>
-    {{ showCustomBlocEdition(bloc)|raw }}
-  </div>
-{% endif %}
+</div>
 
-<div id="properties-div">
-  <div class="tab">
-    <button id="default-style" class="tablinks" data-tab-target="bloc-conditions"><i class="fa fa-question-circle fa-fw"></i>Conditions</button>
+<div id="properties-div" class="mt-4">
+  <ul class="nav nav-pills mb-3 bg-light p-1 rounded" id="blocPropsTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active py-1 px-3" id="bloc-conditions-tab" data-bs-toggle="pill" data-bs-target="#bloc-conditions" type="button" role="tab">
+        <i class="fa fa-question-circle fa-fw me-1"></i>Conditions
+      </button>
+    </li>
     {% for style in bloc.styles %}
-      <button class="tablinks" data-tab-target="{{ style.id }}"><i class="fa fa-paint-brush fa-fw"></i>{{ style.nom }}</button>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link py-1 px-3" id="style-{{ style.id }}-tab" data-bs-toggle="pill" data-bs-target="#style-{{ style.id }}" type="button" role="tab">
+          <i class="fa fa-paint-brush fa-fw me-1"></i>{{ style.nom }}
+        </button>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <div class="tab-content border rounded p-3 shadow-sm bg-white" id="blocPropsTabContent">
+    <div class="tab-pane fade show active" id="bloc-conditions" role="tabpanel">
+      {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/conditions.html.twig' with {'conditions': bloc.conditions, 'cible': 'bloc', 'bloc_id': bloc.id } %}
+    </div>
+    
+    {% for style in bloc.styles %}
+      <div class="tab-pane fade" id="style-{{ style.id }}" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0 text-secondary">{{ style.nom }}</h5>
+          <button class="btn btn-outline-success btn-sm btn-new-property" type="button" data-style-id="{{ style.id }}">
+            <i class="fa fa-plus-circle fa-fw"></i> Propriété
+          </button>
+        </div>
+
+        <div class="div-properties row g-3 mb-4" data-style-id="{{ style.id }}">
+          {% for property, value in style.decodedStyle %}
+            <div class="col-md-6 col-lg-4">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted small border-end-0" style="min-width: 80px;">{{ property }}</span>
+                <input type="text" value="{{ value }}" data-property="{{ property }}" class="form-control style-input border-start-0" data-style-id="{{ style.id }}">
+                <button class="btn btn-outline-danger remove-property" type="button">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="text-center">
+          <button class="btn btn-primary px-4 btn-save-bloc-style" type="button" data-style-id="{{ style.id }}">
+            <i class="fa fa-save fa-fw me-1"></i> Enregistrer le style
+          </button>
+        </div>
+      </div>
     {% endfor %}
   </div>
-
-  <div id="bloc-conditions" class="tabcontent">
-    {% include '@ImanagingConceptionDocument/ConceptionDocument/partials/conditions.html.twig' with {'conditions': bloc.conditions, 'cible': 'bloc', 'bloc_id': bloc.id } %}
-  </div>
-  {% for style in bloc.styles %}
-    <!-- Tab content -->
-    <div id="{{ style.id }}" class="tabcontent">
-      <h3>{{ style.nom }}</h3>
-
-      <button id="btn-new-property" type="button" data-style-id="{{ style.id }}">
-        <i class="fa fa-plus-circle fa-fw"></i>Nouvelle propriété
-      </button>
-
-      <div class="div-properties" data-style-id="{{ style.id }}">
-        {% for property, value in style.decodedStyle %}
-          <div class="form-group">
-            <label for="{{ property }}">{{ property }}</label><i class="fa fa-trash remove-property"></i>
-            <input type="text" id="{{ property }}" value="{{ value }}" data-property="{{ property }}" class="style-input" data-style-id="{{ style.id }}">
-          </div>
-        {% endfor %}
-      </div>
-
-      <button class="btn-save-bloc-style" type="button" data-style-id="{{ style.id }}">
-        <i class="fa fa-save fa-fw"></i>Enregistrer
-      </button>
-    </div>
-  {% endfor %}
 </div>
 
 <style>
-  input[type=text]{
-    width: 100%;
-    padding: 10px 20px;
-    margin: 8px 0;
-    box-sizing: border-box;
+  .nav-pills .nav-link.active {
+    background-color: #0d6efd;
   }
-
-  input[type=text]:focus{
-    background-color: lightyellow;
+  .nav-pills .nav-link {
+    color: #6c757d;
+    font-size: 0.9rem;
   }
-
-  #btn-new-property{
-    font-family: "Open Sans", sans-serif;
-    font-size: 16px;
-    letter-spacing: 2px;
-    text-decoration: none;
-    text-transform: uppercase;
-    color: #28a745;
-    cursor: pointer;
-    border: 2px solid;
-    padding: 0.25em 0.5em;
-    box-shadow: 0px 0px 0px 0px, 1px 1px 0px 0px, 2px 2px 0px 0px, 3px 3px 0px 0px, 4px 4px 0px 0px;
-    position: relative;
-    margin-bottom: 20px;
-    background: white;
-    transition: color 200ms ease;
-  }
-
-  #btn-new-property:hover{
-    color: white;
-    background: #28a745;
+  .style-input:focus {
+    background-color: #fff9e6 !important;
+    border-color: #ffc107;
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
   }
 </style>
-
-<script>
-  $(document).ready(function(){
-    $("#default-style").trigger('click');
-  });
-</script>

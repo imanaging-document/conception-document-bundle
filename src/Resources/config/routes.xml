@@ -32,6 +32,14 @@
         <default key="_controller">imanaging_conception_document.conception_document_controller::selectEntity</default>
     </route>
 
+    <route id="conception_document_toggle_actif" path="/conception/{id}/toggle-actif">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::toggleActif</default>
+    </route>
+
+    <route id="conception_document_save_template_format" path="/conception/{id}/save-template-format">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveTemplateFormat</default>
+    </route>
+
     <route id="conception_document_show_search_entity_form" path="/conception/{id}/show-search-entity-form">
         <default key="_controller">imanaging_conception_document.conception_document_controller::showSearchEntityForm</default>
     </route>
@@ -68,6 +76,10 @@
         <default key="_controller">imanaging_conception_document.conception_document_controller::addBloc</default>
     </route>
 
+    <route id="conception_document_conception_tool_page_import_background_assisted" path="/conception/page/{pageId}/entity/{entityId}/import-background-assisted">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::importBackgroundAssisted</default>
+    </route>
+
     <route id="conception_document_conception_tool_bloc_remove" path="/conception/page/{pageId}/entity/{entityId}/bloc/{blocId}/remove">
         <default key="_controller">imanaging_conception_document.conception_document_controller::removeBloc</default>
     </route>
@@ -88,6 +100,14 @@
         <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocPosition</default>
     </route>
 
+    <route id="conception_document_conception_tool_bloc_save_lock" path="/conception/page/bloc/save-lock">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocLock</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_save_checkbox_state" path="/conception/page/bloc/save-checkbox-state">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocCheckboxState</default>
+    </route>
+
     <route id="conception_document_conception_tool_bloc_load_edition" path="/conception/bloc/{id}/entity/{entityId}/load-edition">
         <default key="_controller">imanaging_conception_document.conception_document_controller::loadBlocEdition</default>
     </route>
@@ -98,6 +118,10 @@
 
     <route id="conception_document_conception_tool_bloc_save_text" path="/conception/bloc/save-text">
         <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocText</default>
+    </route>
+
+    <route id="conception_document_conception_tool_bloc_save_image" path="/conception/bloc/save-image">
+        <default key="_controller">imanaging_conception_document.conception_document_controller::saveBlocImage</default>
     </route>
 
     <route id="conception_document_conception_tool_bloc_save_mode_raw" path="/conception/bloc/save-mode-raw">
