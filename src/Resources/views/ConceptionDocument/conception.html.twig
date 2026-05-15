@@ -26,36 +26,65 @@
       #preview
       {
           width: 70%;
-          float: left;
-          min-height: 100vh;
+          flex: 0 0 70%;
+          height: 100vh;
+          min-height: 0;
           background: #eef1f4;
           overflow: auto;
           padding: 20px;
+          box-sizing: border-box;
       }
 
       #help
       {
           width: 30%;
-          float: left;
-          padding: 20px;
+          flex: 0 0 30%;
+          height: 100vh;
+          min-height: 0;
           font-family: "Arial", Arial, serif;
           background: #fff;
           border-left: 1px solid #dee2e6;
-          min-height: 100vh;
+          overflow: hidden;
+          box-sizing: border-box;
+      }
+
+      #conception-layout{
+          display: flex;
+          height: 100vh;
+          overflow: hidden;
+      }
+
+      .help-scroll-container{
+          height: 100%;
+          overflow-y: auto;
+          padding: 20px;
+          scrollbar-gutter: stable;
       }
 
       #conception-layout.layout-landscape #preview{
           width: 100%;
-          float: none;
+          height: auto;
           min-height: 50vh;
       }
 
       #conception-layout.layout-landscape #help{
           width: 100%;
-          float: none;
+          height: auto;
           min-height: auto;
           border-left: 0;
           border-top: 1px solid #dee2e6;
+          overflow: visible;
+      }
+
+      #conception-layout.layout-landscape{
+          display: block;
+          height: auto;
+          overflow: visible;
+      }
+
+      #conception-layout.layout-landscape .help-scroll-container{
+          height: auto;
+          overflow: visible;
       }
 
       .preview-loading{
@@ -374,16 +403,28 @@
       @media (max-width: 1200px) {
           #preview{
               width: 100%;
-              float: none;
+              height: auto;
               min-height: 50vh;
           }
 
           #help{
               width: 100%;
-              float: none;
+              height: auto;
               min-height: auto;
               border-left: 0;
               border-top: 1px solid #dee2e6;
+              overflow: visible;
+          }
+
+          #conception-layout{
+              display: block;
+              height: auto;
+              overflow: visible;
+          }
+
+          .help-scroll-container{
+              height: auto;
+              overflow: visible;
           }
       }
   </style>
@@ -393,17 +434,18 @@
     </div>
 
     <div id="help">
-    <div>
-      <a href="{{ path('conception_document') }}" class="btn btn-primary w-100">
-        <i class="fa fa-arrow-left fa-fw"></i>Revenir à la liste des conceptions
-      </a>
-    </div>
+      <div class="help-scroll-container">
+        <div>
+          <a href="{{ path('conception_document') }}" class="btn btn-primary w-100">
+            <i class="fa fa-arrow-left fa-fw"></i>Revenir à la liste des conceptions
+          </a>
+        </div>
 
-    <div class="mt-2">
-      <a href="{{ path('conception_document_random_entity', {id: page.template.type.id}) }}" class="btn btn-success w-100">
-        <i class="fa fa-random fa-fw"></i>Changer d'item de personnalisation (<b>au hasard</b>)
-      </a>
-    </div>
+        <div class="mt-2">
+          <a href="{{ path('conception_document_random_entity', {id: page.template.id}) }}" class="btn btn-success w-100">
+            <i class="fa fa-random fa-fw"></i>Changer d'item de personnalisation (<b>au hasard</b>)
+          </a>
+        </div>
 
     <div class="alert alert-secondary mt-2 mb-0 py-2">
       Format du document : <b>{{ page_format|default('A4') }} {% if is_a3_landscape %}(paysage){% else %}(portrait){% endif %}</b>
@@ -464,6 +506,7 @@
         {{ flashMessage|raw }}
       </div>
     {% endfor %}
+      </div>
     </div>
   </div>
 
@@ -473,8 +516,10 @@
     var isPreviewGridEnabled = true;
     var isPreviewSnapEnabled = true;
     var previewSnapStepMm = 1;
+    var previewSettingsStorageKey = 'conceptionDocument.previewSettings';
 
     $(document).ready(function(){
+      loadPreviewSettings();
       loadPage();
       $(window).on('resize', function(){
         applyPreviewScale();
@@ -485,6 +530,38 @@
     function loadPage(){
       loadPreview();
       loadGestionDesBlocs();
+    }
+
+    function loadPreviewSettings(){
+      try {
+        var savedSettings = JSON.parse(localStorage.getItem(previewSettingsStorageKey) || '{}');
+        if (savedSettings.grid !== undefined){
+          isPreviewGridEnabled = savedSettings.grid === true;
+        }
+        if (savedSettings.snap !== undefined){
+          isPreviewSnapEnabled = savedSettings.snap === true;
+        }
+        var savedSnapStep = parseFloat(savedSettings.snapStep);
+        if (!isNaN(savedSnapStep) && savedSnapStep > 0){
+          previewSnapStepMm = savedSnapStep;
+        }
+      } catch (e) {
+      }
+
+      $('#cbx-preview-grid').prop('checked', isPreviewGridEnabled);
+      $('#cbx-preview-snap').prop('checked', isPreviewSnapEnabled);
+      $('#select-snap-step-mm').val(String(previewSnapStepMm));
+    }
+
+    function savePreviewSettings(){
+      try {
+        localStorage.setItem(previewSettingsStorageKey, JSON.stringify({
+          grid: isPreviewGridEnabled,
+          snap: isPreviewSnapEnabled,
+          snapStep: previewSnapStepMm
+        }));
+      } catch (e) {
+      }
     }
 
     function loadPreview(pageNumber){
@@ -521,17 +598,20 @@
 
     $(document).on('change', '#cbx-preview-grid', function(){
       isPreviewGridEnabled = $(this).prop('checked');
+      savePreviewSettings();
       applyPreviewGrid();
     });
 
     $(document).on('change', '#cbx-preview-snap', function(){
       isPreviewSnapEnabled = $(this).prop('checked');
+      savePreviewSettings();
     });
 
     $(document).on('change', '#select-snap-step-mm', function(){
       var step = parseFloat($(this).val());
       if (!isNaN(step) && step > 0){
         previewSnapStepMm = step;
+        savePreviewSettings();
       }
     });
 
@@ -939,7 +1019,7 @@
       });
     }
 
-    $(document).on('click', '#btn-new-property', function(){
+    $(document).on('click', '.btn-new-property', function(){
       var styleId = $(this).data('style-id');
       Swal.mixin({
         input: 'text',
@@ -961,8 +1041,26 @@
         if (result.value) {
           var property = result.value[0];
           var value = result.value[1];
-          $('.div-properties[data-style-id="'+styleId+'"]').append('<div class="form-group"><label for="'+property+'">'
-            +property+'</label><input type="text" id="'+property+'" value="'+value+'" data-property="'+property+'" data-style-id="'+styleId+'" class="style-input"></div>')
+          var $propertyRow = $('<div>').addClass('col-md-6 col-lg-4 property-row');
+          var $inputGroup = $('<div>').addClass('input-group input-group-sm');
+          var $propertyLabel = $('<span>')
+            .addClass('input-group-text bg-light text-muted small border-end-0')
+            .css('min-width', '80px')
+            .text(property);
+          var $propertyInput = $('<input>')
+            .attr('type', 'text')
+            .val(value)
+            .attr('data-property', property)
+            .attr('data-style-id', styleId)
+            .addClass('form-control style-input border-start-0');
+          var $removeButton = $('<button>')
+            .attr('type', 'button')
+            .addClass('btn btn-outline-danger remove-property')
+            .append($('<i>').addClass('fa fa-trash'));
+
+          $inputGroup.append($propertyLabel, $propertyInput, $removeButton);
+          $propertyRow.append($inputGroup);
+          $('.div-properties[data-style-id="'+styleId+'"]').append($propertyRow);
         }
       })
     });
@@ -1108,7 +1206,7 @@
     });
 
     $(document).on('click', '.remove-property', function(){
-      $(this).closest('div.form-group').remove();
+      $(this).closest('.property-row, div.form-group').remove();
     });
 
     $(document).on('click', '.bloc-libelle-update', async function(){

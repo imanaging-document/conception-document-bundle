@@ -154,8 +154,11 @@
             <select name="type_bloc" id="type_bloc" class="form-select" required>
               <option value="" disabled selected>Choisir un type...</option>
               <option value="bloc_checkbox_native">Case à cocher (natif)</option>
+              <option value="bloc_qrcode">QR code</option>
               {% for type in types_bloc %}
-                <option value="{{ type.code }}">{{ type.libelle }}</option>
+                {% if type.code != 'bloc_qrcode' %}
+                  <option value="{{ type.code }}">{{ type.libelle }}</option>
+                {% endif %}
               {% endfor %}
             </select>
           </div>
@@ -251,7 +254,7 @@
   <tr id="bloc_{{ bloc.id }}" class="bloc-row{% if isBlocLocked(bloc) %} bloc-row-locked{% endif %}" data-bloc-code="{{ bloc.code }}">
     <td class="ordre" data-bloc-id="{{ bloc.id }}">{{ bloc.ordre }}</td>
     <td class="fw-bold">{{ bloc.libelle }}</td>
-    <td><span class="badge bg-secondary opacity-75">{{ bloc.type.libelle }}</span></td>
+    <td><span class="badge bg-secondary opacity-75">{% if isQrCodeBloc(bloc) %}QR code{% else %}{{ bloc.type.libelle }}{% endif %}</span></td>
     <td class="text-center">
       <button class="btn btn-link btn-sm p-0 edit-bloc"
          data-url-edition="{{ path('conception_document_conception_tool_bloc_load_edition', {id: bloc.id, entityId: entity_id}) }}"

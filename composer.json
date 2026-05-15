@@ -22,6 +22,7 @@
         "php": "^8.3",
         "doctrine/orm": "^2.14 || ^3.0",
         "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
-        "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0"
+        "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
+        "endroid/qr-code": "^6.0"
     }
 }

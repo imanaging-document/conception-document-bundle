@@ -31,6 +31,12 @@ class ImanagingConceptionDocumentExtension extends Extension
     $definition->setArgument(3, $config['upload_path']);
     $definition->setArgument(4, $config['base_path']);
 
+    $definition = $container->getDefinition('imanaging_conception_document.font_service');
+    $definition->setArgument(0, $config['upload_path']);
+
+    $definition = $container->getDefinition('imanaging_conception_document.font_controller');
+    $definition->setArgument(2, $config['base_path']);
+
     $definition = $container->getDefinition('imanaging_conception_document.twig_functions');
     $definition->setArgument(1, $config['upload_path']);
   }

@@ -94,7 +94,7 @@ class ConceptionDocument
       return ['success' => true, 'filepath' => $filePath];
     }
 
-    return $this->generatePdfWithWkhtml($filePath, $conceptionDocument, $conceptionTemplate);
+    return $this->generatePdf($filePath, $conceptionDocument, $conceptionTemplate);
   }
 
   /**
@@ -134,6 +134,14 @@ class ConceptionDocument
       '.page:last-child { page-break-after: auto; }'.
       '.document-sheet { position: relative; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; background: #fff; font-family: Arial, Helvetica, sans-serif; }'.
       '</style></body></html>';
+  }
+
+  protected function generatePdf(
+    string $filePath,
+    ConceptionDocumentInterface $conceptionDocument,
+    ConceptionTemplateInterface $conceptionTemplate
+  ): array {
+    return $this->generatePdfWithWkhtml($filePath, $conceptionDocument, $conceptionTemplate);
   }
 
   private function generatePdfWithWkhtml(

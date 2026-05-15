@@ -134,13 +134,22 @@ class ConceptionDocumentController extends AbstractController
 
   /**
    * @param $id
+   * @param Request $request
    * @return mixed
    */
-  public function remove($id): mixed
+  public function remove($id, Request $request): mixed
   {
     $template = $this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
     if ($template instanceof ConceptionTemplateInterface){
+      if (!$request->isMethod('POST') || $request->request->get('confirm_delete') !== '1') {
+        return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/remove.html.twig", [
+          'conception' => $template,
+          'basePath' => $this->basePath
+        ]));
+      }
+
       try {
+        $this->removeTemplateChildren($template);
         $this->em->remove($template);
         $this->em->flush();
         $this->addFlash('success', 'Conception supprimée avec succès.');
@@ -151,6 +160,49 @@ class ConceptionDocumentController extends AbstractController
       $this->addFlash('error', 'Impossible de supprimer cette conception : '.$id);
     }
     return $this->redirectToRoute('conception_document');
+  }
+
+  private function removeTemplateChildren(ConceptionTemplateInterface $template): void
+  {
+    foreach ($template->getPages() as $page) {
+      if ($page instanceof ConceptionPageInterface) {
+        $this->removePageChildren($page);
+        $this->em->remove($page);
+      }
+    }
+  }
+
+  private function removePageChildren(ConceptionPageInterface $page): void
+  {
+    foreach ($page->getBlocs() as $bloc) {
+      if ($bloc instanceof ConceptionBlocInterface) {
+        $this->removeBlocChildren($bloc);
+        $this->em->remove($bloc);
+      }
+    }
+
+    foreach ($page->getConditions() as $condition) {
+      if ($condition instanceof ConceptionConditionInterface) {
+        $this->em->remove($condition);
+      }
+    }
+  }
+
+  private function removeBlocChildren(ConceptionBlocInterface $bloc): void
+  {
+    if (method_exists($bloc, 'getStyles')) {
+      foreach ($bloc->getStyles() as $style) {
+        if ($style instanceof ConceptionBlocStyleInterface) {
+          $this->em->remove($style);
+        }
+      }
+    }
+
+    foreach ($bloc->getConditions() as $condition) {
+      if ($condition instanceof ConceptionConditionInterface) {
+        $this->em->remove($condition);
+      }
+    }
   }
 
   /**
@@ -705,6 +757,9 @@ class ConceptionDocumentController extends AbstractController
       if (($params['type_bloc'] ?? '') === 'bloc_checkbox_native') {
         return $this->addNativeCheckboxBloc($page, $entityId, $params);
       }
+      if (($params['type_bloc'] ?? '') === 'bloc_qrcode') {
+        return $this->addQrCodeBloc($page, $entityId, $params);
+      }
 
       $typeBloc = $this->em->getRepository(ConceptionBlocTypeInterface::class)->findOneBy(['code' => $params['type_bloc']]);
       if ($typeBloc instanceof ConceptionBlocTypeInterface){
@@ -713,6 +768,7 @@ class ConceptionDocumentController extends AbstractController
           $bloc = new $className();
           $bloc->setPage($page);
           $bloc->setType($typeBloc);
+          $bloc->setOrdre($this->getNextBlocOrdre($page));
           switch ($params['type_bloc']){
             case 'bloc_image':
               $files = $request->files->all();
@@ -785,6 +841,7 @@ class ConceptionDocumentController extends AbstractController
     $bloc = new $className();
     $bloc->setPage($page);
     $bloc->setType($typeBlocTexte);
+    $bloc->setOrdre($this->getNextBlocOrdre($page));
     $bloc->setLibelle(trim((string)($params['libelle'] ?? 'Case à cocher')));
     $checked = $this->isTruthy($params['checkbox_checked'] ?? false);
     $bloc->setTexte($checked ? 'X' : '');
@@ -831,6 +888,102 @@ class ConceptionDocumentController extends AbstractController
       'entityId' => $entityId,
       'pageNumber' => $page->getOrdre()
     ]);
+  }
+
+  private function addQrCodeBloc(ConceptionPageInterface $page, int|string $entityId, array $params): Response
+  {
+    $typeBlocTexte = $this->em->getRepository(ConceptionBlocTypeInterface::class)->findOneBy(['code' => 'bloc_texte']);
+    if (!($typeBlocTexte instanceof ConceptionBlocTypeInterface)) {
+      $this->addFlash('error', 'Le type de bloc "bloc_texte" est requis pour créer un QR code.');
+      return $this->redirectToRoute('conception_document_conception_tool', [
+        'id' => $page->getTemplate()->getId(),
+        'entityId' => $entityId,
+        'pageNumber' => $page->getOrdre()
+      ]);
+    }
+
+    $qrcodeContent = trim((string)($params['qrcode_content'] ?? ''));
+    if ($qrcodeContent === '') {
+      $this->addFlash('error', 'Le contenu du QR code est obligatoire.');
+      return $this->redirectToRoute('conception_document_conception_tool', [
+        'id' => $page->getTemplate()->getId(),
+        'entityId' => $entityId,
+        'pageNumber' => $page->getOrdre()
+      ]);
+    }
+
+    $typeBlocQrCode = $this->ensureQrCodeBlocType($typeBlocTexte);
+    $className = $typeBlocTexte->getEntity();
+    $bloc = new $className();
+    $bloc->setPage($page);
+    $bloc->setType($typeBlocQrCode);
+    $bloc->setOrdre($this->getNextBlocOrdre($page));
+    $bloc->setLibelle(trim((string)($params['libelle'] ?? 'QR code')));
+    $bloc->setTexte($qrcodeContent);
+    $bloc->setModeRaw(false);
+    $this->em->persist($bloc);
+
+    $stylesToCreate = $bloc->getStylesToCreate();
+    foreach ($stylesToCreate as $style){
+      $this->em->persist($style);
+    }
+
+    $rootStyle = $bloc->getStyleByCode('root');
+    if ($rootStyle instanceof ConceptionBlocStyleInterface){
+      $properties = $rootStyle->getDecodedStyle();
+      if (!is_array($properties)) {
+        $properties = [];
+      }
+      $properties['position'] = 'absolute';
+      $properties['top'] = $properties['top'] ?? '10mm';
+      $properties['left'] = $properties['left'] ?? '10mm';
+      $properties['width'] = '25mm';
+      $properties['height'] = '25mm';
+      $properties['display'] = 'block';
+      $properties['opacity'] = '1';
+      $properties['z-index'] = $properties['z-index'] ?? '2';
+      $properties['--bundle-qrcode'] = '1';
+      $rootStyle->setStyle(json_encode($properties));
+      $this->em->persist($rootStyle);
+    }
+
+    $this->em->flush();
+    $this->addFlash('success', 'QR code ajouté avec succès.');
+
+    return $this->redirectToRoute('conception_document_conception_tool', [
+      'id' => $page->getTemplate()->getId(),
+      'entityId' => $entityId,
+      'pageNumber' => $page->getOrdre()
+    ]);
+  }
+
+  private function ensureQrCodeBlocType(ConceptionBlocTypeInterface $typeBlocTexte): ConceptionBlocTypeInterface
+  {
+    $typeBlocQrCode = $this->em->getRepository(ConceptionBlocTypeInterface::class)->findOneBy(['code' => 'bloc_qrcode']);
+    if ($typeBlocQrCode instanceof ConceptionBlocTypeInterface) {
+      return $typeBlocQrCode;
+    }
+
+    $className = $this->em->getRepository(ConceptionBlocTypeInterface::class)->getClassName();
+    $typeBlocQrCode = new $className();
+    $typeBlocQrCode->setCode('bloc_qrcode');
+    $typeBlocQrCode->setLibelle('QR code');
+    $typeBlocQrCode->setEntity($typeBlocTexte->getEntity());
+    $this->em->persist($typeBlocQrCode);
+
+    return $typeBlocQrCode;
+  }
+
+  private function getNextBlocOrdre(ConceptionPageInterface $page): int
+  {
+    $maxOrdre = 0;
+    foreach ($page->getBlocs() as $bloc) {
+      if ($bloc instanceof ConceptionBlocInterface) {
+        $maxOrdre = max($maxOrdre, (int)$bloc->getOrdre());
+      }
+    }
+
+    return $maxOrdre + 1;
   }
 
   /**
@@ -935,6 +1088,7 @@ class ConceptionDocumentController extends AbstractController
 
     $pageDimensions = $this->getPageDimensionsMm($page->getTemplate());
     $this->applyBackgroundStyle($backgroundBloc, $pageDimensions['width'], $pageDimensions['height']);
+    $this->setBlocLocked($backgroundBloc, true);
     $this->em->flush();
     $this->addFlash('success', 'Fond de page importé avec succès.');
 
@@ -1021,6 +1175,8 @@ class ConceptionDocumentController extends AbstractController
         return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/partials/bloc-generique/bloc-texte.html.twig"));
       case 'bloc_checkbox_native':
         return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/partials/bloc-generique/bloc-checkbox-native.html.twig"));
+      case 'bloc_qrcode':
+        return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/partials/bloc-generique/bloc-qrcode.html.twig"));
       case 'bloc_image':
         return new Response($this->twig->render("@ImanagingConceptionDocument/ConceptionDocument/partials/bloc-generique/bloc-image.html.twig"));
       case 'formes_predefinies':
@@ -1239,7 +1395,7 @@ class ConceptionDocumentController extends AbstractController
     $params = $request->request->all();
     $bloc = $this->em->getRepository(ConceptionBlocInterface::class)->find($params['bloc_id']);
     if ($bloc instanceof ConceptionBlocInterface){
-      if ($bloc->getType()->getCode() == 'bloc_texte'){
+      if (in_array($bloc->getType()->getCode(), ['bloc_texte', 'bloc_qrcode'], true)){
         $bloc->setTexte($params['texte']);
         $this->em->persist($bloc);
         $this->em->flush();
@@ -1712,6 +1868,23 @@ class ConceptionDocumentController extends AbstractController
     $properties['opacity'] = '1';
     $properties['--bundle-background'] = '1';
     $properties['--bundle-lock'] = '1';
+    $rootStyle->setStyle(json_encode($properties));
+    $this->em->persist($rootStyle);
+  }
+
+  private function setBlocLocked(ConceptionBlocInterface $bloc, bool $locked): void
+  {
+    $rootStyle = $this->ensureRootStyle($bloc);
+    if (!($rootStyle instanceof ConceptionBlocStyleInterface)) {
+      return;
+    }
+
+    $properties = $rootStyle->getDecodedStyle();
+    if (!is_array($properties)) {
+      $properties = [];
+    }
+
+    $properties['--bundle-lock'] = $locked ? '1' : '0';
     $rootStyle->setStyle(json_encode($properties));
     $this->em->persist($rootStyle);
   }

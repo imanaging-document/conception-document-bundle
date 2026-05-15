@@ -12,6 +12,22 @@
         <default key="_controller">imanaging_conception_document.conception_document_controller::add</default>
     </route>
 
+    <route id="conception_document_fonts" path="/fonts">
+        <default key="_controller">imanaging_conception_document.font_controller::index</default>
+    </route>
+
+    <route id="conception_document_fonts_upload" path="/fonts/upload" methods="POST">
+        <default key="_controller">imanaging_conception_document.font_controller::upload</default>
+    </route>
+
+    <route id="conception_document_fonts_manifest" path="/fonts/{familyId}/manifest" methods="POST">
+        <default key="_controller">imanaging_conception_document.font_controller::updateManifest</default>
+    </route>
+
+    <route id="conception_document_fonts_delete" path="/fonts/{familyId}/delete" methods="POST">
+        <default key="_controller">imanaging_conception_document.font_controller::delete</default>
+    </route>
+
     <route id="conception_document_remove" path="/conception/{id}/remove">
         <default key="_controller">imanaging_conception_document.conception_document_controller::remove</default>
     </route>

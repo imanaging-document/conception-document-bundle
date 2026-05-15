@@ -1,7 +1,17 @@
 <style>
   {{ bloc.css|raw }}
 </style>
-{% if bloc.type.code == 'bloc_image' %}
+{% if isQrCodeBloc(bloc) %}
+  {% set qrcode_data_uri = getQrCodeDataUri(personnalizeText(bloc.texte, conception_document)) %}
+  <div id="{{ bloc.code }}"
+       class="bloc-element bloc-qrcode{% if isBlocLocked(bloc) %} bloc-locked{% endif %}"
+       data-bloc-id="{{ bloc.id }}"
+       data-bloc-locked="{% if isBlocLocked(bloc) %}1{% else %}0{% endif %}">
+    {% if qrcode_data_uri %}
+      <img src="{{ qrcode_data_uri }}" alt="QR code" style="display:block;width:100%;height:100%;" />
+    {% endif %}
+  </div>
+{% elseif bloc.type.code == 'bloc_image' %}
   {% set is_background_bloc = isBackgroundBloc(bloc) %}
   <img id="{{ bloc.code }}"
        alt="logo-client"

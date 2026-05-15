@@ -1,0 +1,143 @@
+{% extends basePath|default('base.html.twig') %}
+
+{% block body %}
+  <style>
+    {{ font_css|raw }}
+
+    .font-admin-preview {
+      min-height: 48px;
+      padding: 12px;
+      border: 1px solid #dee2e6;
+      background: #fff;
+    }
+
+    .font-admin-alias {
+      display: inline-block;
+      margin: 0 4px 4px 0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #e9ecef;
+      font-size: 12px;
+    }
+  </style>
+
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">Administration des polices de conception</h2>
+      <a href="{{ path('conception_document') }}" class="btn btn-outline-secondary">
+        Retour aux conceptions
+      </a>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">
+        <h3 class="mb-0">Importer une police</h3>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ path('conception_document_fonts_upload') }}" enctype="multipart/form-data">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="family" class="form-label">Famille</label>
+              <input type="text" id="family" name="family" class="form-control" placeholder="Calibri" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="aliases" class="form-label">Alias SVG</label>
+              <input type="text" id="aliases" name="aliases" class="form-control" placeholder="Calibri, Calibri-Bold">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="font_files" class="form-label">Fichiers</label>
+              <input type="file" id="font_files" name="font_files[]" class="form-control" accept=".ttf,.otf,.woff,.woff2" multiple required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Importer</button>
+        </form>
+      </div>
+    </div>
+
+    {% if families is empty %}
+      <div class="alert alert-info">Aucune police administrée pour le moment.</div>
+    {% endif %}
+
+    {% for family in families %}
+      {% set manifest = family.manifest %}
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h3 class="mb-0">{{ manifest.family }}</h3>
+            <small class="text-muted">{{ family.variants|length }} fichier(s), utilisée dans {{ family.usages }} SVG</small>
+          </div>
+          <form method="post"
+                action="{{ path('conception_document_fonts_delete', {familyId: family.id}) }}"
+                onsubmit="return confirm('Supprimer cette famille de police ?');">
+            <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+          </form>
+        </div>
+
+        <div class="card-body">
+          <form method="post" action="{{ path('conception_document_fonts_manifest', {familyId: family.id}) }}">
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label" for="family-{{ family.id }}">Famille CSS principale</label>
+                <input type="text" id="family-{{ family.id }}" name="family" class="form-control" value="{{ manifest.family }}" required>
+              </div>
+              <div class="col-md-8 mb-3">
+                <label class="form-label" for="aliases-{{ family.id }}">Alias acceptés dans les SVG</label>
+                <textarea id="aliases-{{ family.id }}" name="aliases" class="form-control" rows="2">{{ manifest.aliases|join(', ') }}</textarea>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead>
+                <tr>
+                  <th>Fichier</th>
+                  <th style="width: 140px;">Graisse</th>
+                  <th style="width: 160px;">Style</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for variant in family.variants %}
+                  <tr>
+                    <td>
+                      {{ variant.file }}
+                      <input type="hidden" name="variants[{{ loop.index0 }}][file]" value="{{ variant.file }}">
+                    </td>
+                    <td>
+                      <select name="variants[{{ loop.index0 }}][weight]" class="form-select form-select-sm">
+                        {% for weight in [100, 200, 300, 400, 500, 600, 700, 800, 900] %}
+                          <option value="{{ weight }}" {% if variant.weight == weight %}selected{% endif %}>{{ weight }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td>
+                      <select name="variants[{{ loop.index0 }}][style]" class="form-select form-select-sm">
+                        {% for style in ['normal', 'italic', 'oblique'] %}
+                          <option value="{{ style }}" {% if variant.style == style %}selected{% endif %}>{{ style }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mb-3">
+              {% for alias in manifest.aliases %}
+                <span class="font-admin-alias">{{ alias }}</span>
+              {% endfor %}
+            </div>
+
+            <div class="font-admin-preview mb-3" style="font-family: '{{ manifest.family }}', sans-serif;">
+              Prévisualisation : Le rapide renard brun saute par-dessus le chien paresseux. 0123456789
+              <br>
+              <strong>Bold</strong> · <em>Italic</em> · <strong><em>Bold italic</em></strong>
+            </div>
+
+            <button type="submit" class="btn btn-success">Enregistrer</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

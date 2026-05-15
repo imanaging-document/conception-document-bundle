@@ -29,7 +29,17 @@
       </div>
     </div>
 
-    {% if bloc.type.code == 'bloc_texte' %}
+    {% if isQrCodeBloc(bloc) %}
+      <div class="mt-3 pt-3 border-top">
+        <label class="text-muted small d-block mb-1">Contenu du QR code</label>
+        <div class="d-flex align-items-center">
+          <span class="text-truncate fw-bold bloc-texte-data" style="max-width: 320px;" data-bloc-id="{{ bloc.id }}">{{ bloc.texte }}</span>
+          <button class="btn btn-outline-info btn-sm border-0 bloc-texte-update ms-2" data-bloc-id="{{ bloc.id }}" data-texte="{{ bloc.texte }}">
+            <i class="fa fa-pen"></i>
+          </button>
+        </div>
+      </div>
+    {% elseif bloc.type.code == 'bloc_texte' %}
       <div class="mt-3 pt-3 border-top">
         <div class="row align-items-center">
           <div class="col-sm-6">
@@ -87,8 +97,8 @@
     
     {% for style in bloc.styles %}
       <div class="tab-pane fade" id="style-{{ style.id }}" role="tabpanel">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0 text-secondary">{{ style.nom }}</h5>
+        <div class="mb-3">
+          <h5 class="mb-2 text-secondary">{{ style.nom }}</h5>
           <button class="btn btn-outline-success btn-sm btn-new-property" type="button" data-style-id="{{ style.id }}">
             <i class="fa fa-plus-circle fa-fw"></i> Propriété
           </button>
@@ -96,7 +106,7 @@
 
         <div class="div-properties row g-3 mb-4" data-style-id="{{ style.id }}">
           {% for property, value in style.decodedStyle %}
-            <div class="col-md-6 col-lg-4">
+            <div class="col-md-6 col-lg-4 property-row">
               <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light text-muted small border-end-0" style="min-width: 80px;">{{ property }}</span>
                 <input type="text" value="{{ value }}" data-property="{{ property }}" class="form-control style-input border-start-0" data-style-id="{{ style.id }}">

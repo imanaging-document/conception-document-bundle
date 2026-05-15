@@ -24,9 +24,29 @@
             <argument type="service" id="twig" />
         </service>
 
+        <service id="imanaging_conception_document.font_service" class="Imanaging\ConceptionDocumentBundle\Service\ConceptionFontService" public="true">
+            <argument />
+        </service>
+        <service id="Imanaging\ConceptionDocumentBundle\Service\ConceptionFontService" alias="imanaging_conception_document.font_service" public="false" />
+
+        <service id="imanaging_conception_document.qr_code_service" class="Imanaging\ConceptionDocumentBundle\Service\ConceptionQrCodeService" public="true" />
+        <service id="Imanaging\ConceptionDocumentBundle\Service\ConceptionQrCodeService" alias="imanaging_conception_document.qr_code_service" public="false" />
+
+        <service id="imanaging_conception_document.font_controller" class="Imanaging\ConceptionDocumentBundle\Controller\ConceptionDocumentFontController" public="true">
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+            <tag name="container.service_subscriber"/>
+            <argument type="service" id="imanaging_conception_document.font_service" />
+            <argument type="service" id="twig" />
+            <argument />
+        </service>
+
         <service id="imanaging_conception_document.twig_functions" class="Imanaging\ConceptionDocumentBundle\Twig\TwigFunctions">
             <argument type="service" id="app.conception_personnalisation_service" />
             <argument />
+            <argument type="service" id="imanaging_conception_document.font_service" />
+            <argument type="service" id="imanaging_conception_document.qr_code_service" />
             <tag name="twig.extension" />
         </service>
     </services>

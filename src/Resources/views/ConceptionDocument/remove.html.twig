@@ -1,0 +1,28 @@
+{% extends basePath %}
+
+{% block body %}
+  <title>Supprimer la conception</title>
+  <div class="container">
+    <div class="card shadow-sm border-danger">
+      <div class="card-header bg-danger text-white py-3">
+        <h4 class="mb-0"><i class="fa fa-trash me-2"></i>Supprimer la conception</h4>
+      </div>
+      <div class="card-body">
+        <p class="mb-4">
+          Voulez-vous supprimer définitivement la conception <strong>{{ conception.libelle }}</strong> ?
+        </p>
+        <div class="d-flex gap-2">
+          <form action="{{ path('conception_document_remove', {id: conception.id}) }}" method="post">
+            <input type="hidden" name="confirm_delete" value="1">
+            <button type="submit" class="btn btn-danger">
+              <i class="fa fa-trash me-1"></i> Confirmer la suppression
+            </button>
+          </form>
+          <a href="{{ path('conception_document') }}" class="btn btn-outline-secondary">
+            Annuler
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
