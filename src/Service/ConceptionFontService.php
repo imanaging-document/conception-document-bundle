@@ -9,6 +9,10 @@ class ConceptionFontService
   private const FONT_EXTENSIONS = ['ttf', 'otf', 'woff', 'woff2'];
   private const MANIFEST_FILENAME = 'manifest.json';
   private ?string $fontFaceCssCache = null;
+  /**
+   * @var array<string, string>
+   */
+  private array $fontFaceCssByFamilyCache = [];
 
   public function __construct(
     private readonly string $uploadPath
@@ -91,6 +95,7 @@ class ConceptionFontService
 
     $this->saveManifest($familyId, $manifest);
     $this->fontFaceCssCache = null;
+    $this->fontFaceCssByFamilyCache = [];
   }
 
   /**
@@ -141,6 +146,7 @@ class ConceptionFontService
 
     $this->saveManifest($familyId, $manifest);
     $this->fontFaceCssCache = null;
+    $this->fontFaceCssByFamilyCache = [];
   }
 
   public function deleteFamily(string $familyId): void
@@ -165,6 +171,7 @@ class ConceptionFontService
 
     rmdir($directory);
     $this->fontFaceCssCache = null;
+    $this->fontFaceCssByFamilyCache = [];
   }
 
   public function getFontFaceCss(): string
@@ -173,10 +180,60 @@ class ConceptionFontService
       return $this->fontFaceCssCache;
     }
 
+    $this->fontFaceCssCache = $this->buildFontFaceCss();
+
+    return $this->fontFaceCssCache;
+  }
+
+  /**
+   * @param string[] $fontFamilies
+   */
+  public function getFontFaceCssForFamilies(array $fontFamilies): string
+  {
+    $requestedFontKeys = [];
+    foreach ($fontFamilies as $fontFamily) {
+      $fontFamily = trim((string)$fontFamily);
+      if ($fontFamily !== '') {
+        $requestedFontKeys[$this->normalizeFontFamilyKey($fontFamily)] = true;
+      }
+    }
+
+    if (count($requestedFontKeys) === 0) {
+      return '';
+    }
+
+    ksort($requestedFontKeys);
+    $cacheKey = implode('|', array_keys($requestedFontKeys));
+    if (array_key_exists($cacheKey, $this->fontFaceCssByFamilyCache)) {
+      return $this->fontFaceCssByFamilyCache[$cacheKey];
+    }
+
+    $this->fontFaceCssByFamilyCache[$cacheKey] = $this->buildFontFaceCss($requestedFontKeys);
+
+    return $this->fontFaceCssByFamilyCache[$cacheKey];
+  }
+
+  /**
+   * @param array<string, true>|null $requestedFontKeys
+   */
+  private function buildFontFaceCss(?array $requestedFontKeys = null): string
+  {
     $fontFaces = [];
     foreach ($this->scanFamilies(false) as $family) {
       $manifest = $family['manifest'];
       foreach ($manifest['variants'] as $variant) {
+        $families = $this->getVariantFamilies($manifest, $variant);
+        if ($requestedFontKeys !== null) {
+          $families = array_values(array_filter(
+            $families,
+            fn (string $fontFamily): bool => isset($requestedFontKeys[$this->normalizeFontFamilyKey($fontFamily)])
+          ));
+        }
+
+        if (count($families) === 0) {
+          continue;
+        }
+
         $fontPath = $family['path'].'/'.$variant['file'];
         if (!is_file($fontPath)) {
           continue;
@@ -189,7 +246,6 @@ class ConceptionFontService
 
         $extension = strtolower(pathinfo($fontPath, PATHINFO_EXTENSION));
         $fontData = base64_encode($fontContent);
-        $families = $this->getVariantFamilies($manifest, $variant);
 
         foreach ($families as $fontFamily) {
           $fontFaces[] = sprintf(
@@ -205,9 +261,7 @@ class ConceptionFontService
       }
     }
 
-    $this->fontFaceCssCache = implode('', array_unique($fontFaces));
-
-    return $this->fontFaceCssCache;
+    return implode('', array_unique($fontFaces));
   }
 
   /**
@@ -256,6 +310,11 @@ class ConceptionFontService
   private function getFontsDirectory(): string
   {
     return rtrim($this->uploadPath, '/').'/fonts';
+  }
+
+  private function normalizeFontFamilyKey(string $fontFamily): string
+  {
+    return strtolower(trim($fontFamily));
   }
 
   private function getFamilyDirectory(string $familyId): string

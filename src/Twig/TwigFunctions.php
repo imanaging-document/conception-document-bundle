@@ -227,7 +227,9 @@ class TwigFunctions extends AbstractExtension
       return '';
     }
 
-    $fontFaceCss = $this->conceptionFontService->getFontFaceCss();
+    $fontFaceCss = $this->conceptionFontService->getFontFaceCssForFamilies(
+      $this->extractSvgFontFamilies($svgContent)
+    );
     if ($fontFaceCss === '' || str_contains($svgContent, 'data-conception-fonts="embedded"')) {
       return $svgContent;
     }
@@ -238,5 +240,37 @@ class TwigFunctions extends AbstractExtension
     }
 
     return (string)preg_replace('/(<svg\b[^>]*>)/i', '$1<defs>'.$fontStyle.'</defs>', $svgContent, 1);
+  }
+
+  /**
+   * @return string[]
+   */
+  private function extractSvgFontFamilies(string $svgContent): array
+  {
+    $fontStacks = [];
+    if (preg_match_all('/font-family\s*:\s*([^;}]+)/i', $svgContent, $cssMatches)) {
+      foreach ($cssMatches[1] as $fontStack) {
+        $fontStacks[] = trim((string)$fontStack);
+      }
+    }
+
+    if (preg_match_all('/font-family\s*=\s*([\'"])(.*?)\1/i', $svgContent, $attributeMatches)) {
+      foreach ($attributeMatches[2] as $fontStack) {
+        $fontStacks[] = trim((string)$fontStack);
+      }
+    }
+
+    $fontFamilies = [];
+    foreach ($fontStacks as $fontStack) {
+      foreach (explode(',', $fontStack) as $fontFamily) {
+        $fontFamily = trim($fontFamily);
+        $fontFamily = trim($fontFamily, "\"' \t\n\r\0\x0B");
+        if ($fontFamily !== '') {
+          $fontFamilies[] = $fontFamily;
+        }
+      }
+    }
+
+    return array_values(array_unique($fontFamilies));
   }
 }
