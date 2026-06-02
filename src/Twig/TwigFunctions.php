@@ -228,7 +228,8 @@ class TwigFunctions extends AbstractExtension
     }
 
     $fontFaceCss = $this->conceptionFontService->getFontFaceCssForFamilies(
-      $this->extractSvgFontFamilies($svgContent)
+      $this->extractSvgFontFamilies($svgContent),
+      false
     );
     if ($fontFaceCss === '' || str_contains($svgContent, 'data-conception-fonts="embedded"')) {
       return $svgContent;

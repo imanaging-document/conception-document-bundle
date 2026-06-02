@@ -188,7 +188,7 @@ class ConceptionFontService
   /**
    * @param string[] $fontFamilies
    */
-  public function getFontFaceCssForFamilies(array $fontFamilies): string
+  public function getFontFaceCssForFamilies(array $fontFamilies, bool $includeAllVariantsForBaseFamilies = true): string
   {
     $requestedFontKeys = [];
     foreach ($fontFamilies as $fontFamily) {
@@ -203,12 +203,15 @@ class ConceptionFontService
     }
 
     ksort($requestedFontKeys);
-    $cacheKey = implode('|', array_keys($requestedFontKeys));
+    $cacheKey = ($includeAllVariantsForBaseFamilies ? 'all' : 'exact').':'.implode('|', array_keys($requestedFontKeys));
     if (array_key_exists($cacheKey, $this->fontFaceCssByFamilyCache)) {
       return $this->fontFaceCssByFamilyCache[$cacheKey];
     }
 
-    $this->fontFaceCssByFamilyCache[$cacheKey] = $this->buildFontFaceCss($requestedFontKeys);
+    $this->fontFaceCssByFamilyCache[$cacheKey] = $this->buildFontFaceCss(
+      $requestedFontKeys,
+      $includeAllVariantsForBaseFamilies
+    );
 
     return $this->fontFaceCssByFamilyCache[$cacheKey];
   }
@@ -216,17 +219,24 @@ class ConceptionFontService
   /**
    * @param array<string, true>|null $requestedFontKeys
    */
-  private function buildFontFaceCss(?array $requestedFontKeys = null): string
+  private function buildFontFaceCss(?array $requestedFontKeys = null, bool $includeAllVariantsForBaseFamilies = true): string
   {
     $fontFaces = [];
     foreach ($this->scanFamilies(false) as $family) {
       $manifest = $family['manifest'];
+      $baseFontKeys = $this->getBaseFontKeys($manifest);
       foreach ($manifest['variants'] as $variant) {
         $families = $this->getVariantFamilies($manifest, $variant);
         if ($requestedFontKeys !== null) {
           $families = array_values(array_filter(
             $families,
-            fn (string $fontFamily): bool => isset($requestedFontKeys[$this->normalizeFontFamilyKey($fontFamily)])
+            fn (string $fontFamily): bool => $this->shouldEmbedVariantFamily(
+              $fontFamily,
+              $variant,
+              $requestedFontKeys,
+              $baseFontKeys,
+              $includeAllVariantsForBaseFamilies
+            )
           ));
         }
 
@@ -314,7 +324,47 @@ class ConceptionFontService
 
   private function normalizeFontFamilyKey(string $fontFamily): string
   {
-    return strtolower(trim($fontFamily));
+    return strtolower((string)preg_replace('/[^a-z0-9]+/i', '', trim($fontFamily)));
+  }
+
+  /**
+   * @param array<string, mixed> $manifest
+   * @return array<string, true>
+   */
+  private function getBaseFontKeys(array $manifest): array
+  {
+    $baseFontKeys = [];
+    foreach ($this->normalizeAliases(array_merge([$manifest['family']], $manifest['aliases'])) as $fontFamily) {
+      $baseFontKeys[$this->normalizeFontFamilyKey($fontFamily)] = true;
+    }
+
+    return $baseFontKeys;
+  }
+
+  /**
+   * @param array<string, mixed> $variant
+   * @param array<string, true> $requestedFontKeys
+   * @param array<string, true> $baseFontKeys
+   */
+  private function shouldEmbedVariantFamily(
+    string $fontFamily,
+    array $variant,
+    array $requestedFontKeys,
+    array $baseFontKeys,
+    bool $includeAllVariantsForBaseFamilies
+  ): bool
+  {
+    $fontKey = $this->normalizeFontFamilyKey($fontFamily);
+    if (!isset($requestedFontKeys[$fontKey])) {
+      return false;
+    }
+
+    if ($includeAllVariantsForBaseFamilies || !isset($baseFontKeys[$fontKey])) {
+      return true;
+    }
+
+    return (int)($variant['weight'] ?? 400) === 400
+      && strtolower((string)($variant['style'] ?? 'normal')) === 'normal';
   }
 
   private function getFamilyDirectory(string $familyId): string
