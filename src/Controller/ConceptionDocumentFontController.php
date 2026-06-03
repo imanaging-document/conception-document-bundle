@@ -4,8 +4,10 @@ namespace Imanaging\ConceptionDocumentBundle\Controller;
 
 use Imanaging\ConceptionDocumentBundle\Service\ConceptionFontService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Twig\Environment;
 
 class ConceptionDocumentFontController extends AbstractController
@@ -65,5 +67,22 @@ class ConceptionDocumentFontController extends AbstractController
     }
 
     return $this->redirectToRoute('conception_document_fonts');
+  }
+
+  public function serveFile(string $familyId, string $filename): Response
+  {
+    $fontPath = $this->conceptionFontService->getFontFilePath($familyId, $filename);
+    if ($fontPath === null) {
+      throw $this->createNotFoundException('Police introuvable.');
+    }
+
+    $response = new BinaryFileResponse($fontPath);
+    $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, basename($fontPath));
+    $response->setPublic();
+    $response->setMaxAge(31536000);
+    $response->setSharedMaxAge(31536000);
+    $response->headers->addCacheControlDirective('immutable');
+
+    return $response;
   }
 }

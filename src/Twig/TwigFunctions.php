@@ -5,6 +5,7 @@ namespace Imanaging\ConceptionDocumentBundle\Twig;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionBlocInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionBlocStyleInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionDocumentInterface;
+use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionPageInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionPersonnalisationServiceInterface;
 use Imanaging\ConceptionDocumentBundle\Service\ConceptionFontService;
 use Imanaging\ConceptionDocumentBundle\Service\ConceptionQrCodeService;
@@ -13,6 +14,22 @@ use Twig\TwigFunction;
 
 class TwigFunctions extends AbstractExtension
 {
+  private const GENERIC_FONT_FAMILIES = [
+    'cursive',
+    'emoji',
+    'fantasy',
+    'fangsong',
+    'math',
+    'monospace',
+    'sans-serif',
+    'serif',
+    'system-ui',
+    'ui-monospace',
+    'ui-rounded',
+    'ui-sans-serif',
+    'ui-serif',
+  ];
+
   private ConceptionPersonnalisationServiceInterface $conceptionPersonnalisationService;
   private string $uploadPath;
 
@@ -61,7 +78,7 @@ class TwigFunctions extends AbstractExtension
     if (file_exists($filePath)){
       if (strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) == 'svg'){
         $prefix = 'data:image/svg+xml;base64,';
-        return $prefix.base64_encode($this->getSvgContentWithEmbeddedFonts($filePath));
+        return $prefix.base64_encode(file_get_contents($filePath));
       } elseif(strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) == 'jpg'){
         $prefix = 'data:image/jpg;base64,';
       } elseif(strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) == 'jpeg'){
@@ -162,9 +179,18 @@ class TwigFunctions extends AbstractExtension
     return stripos($bloc->getLibelle(), 'fond de page') === 0;
   }
 
-  public function getConceptionFontFaceCss(): string
+  public function getConceptionFontFaceCss(?ConceptionPageInterface $page = null, ?ConceptionDocumentInterface $conceptionDocument = null): string
   {
-    return $this->conceptionFontService->getFontFaceCss();
+    if (!($page instanceof ConceptionPageInterface)) {
+      return '';
+    }
+
+    $fontFamilies = $this->getVisibleTextBlocFontFamilies($page, $conceptionDocument);
+    if (count($fontFamilies) === 0) {
+      return '';
+    }
+
+    return $this->conceptionFontService->getFontFaceCssForFamilies($fontFamilies);
   }
 
   public function isQrCodeBloc(ConceptionBlocInterface $bloc): bool
@@ -220,56 +246,78 @@ class TwigFunctions extends AbstractExtension
     return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
   }
 
-  private function getSvgContentWithEmbeddedFonts(string $filePath): string
+  /**
+   * @return string[]
+   */
+  private function getVisibleTextBlocFontFamilies(ConceptionPageInterface $page, ?ConceptionDocumentInterface $conceptionDocument): array
   {
-    $svgContent = file_get_contents($filePath);
-    if ($svgContent === false) {
-      return '';
+    $fontFamilies = [];
+    foreach ($page->getBlocs() as $bloc) {
+      if (!($bloc instanceof ConceptionBlocInterface)) {
+        continue;
+      }
+      if (!method_exists($bloc, 'getType') || $bloc->getType()->getCode() !== 'bloc_texte') {
+        continue;
+      }
+      if ($conceptionDocument instanceof ConceptionDocumentInterface && !$this->canShowBloc($bloc->getConditions(), $conceptionDocument)) {
+        continue;
+      }
+      if (!method_exists($bloc, 'getStyles')) {
+        continue;
+      }
+
+      foreach ($bloc->getStyles() as $style) {
+        if (!($style instanceof ConceptionBlocStyleInterface)) {
+          continue;
+        }
+
+        $fontFamilies = array_merge($fontFamilies, $this->extractFontFamiliesFromStyle($style));
+      }
     }
 
-    $fontFaceCss = $this->conceptionFontService->getFontFaceCssForFamilies(
-      $this->extractSvgFontFamilies($svgContent),
-      false
-    );
-    if ($fontFaceCss === '' || str_contains($svgContent, 'data-conception-fonts="embedded"')) {
-      return $svgContent;
-    }
-
-    $fontStyle = '<style data-conception-fonts="embedded">'.$fontFaceCss.'</style>';
-    if (preg_match('/<defs\b[^>]*>/i', $svgContent)) {
-      return (string)preg_replace('/(<defs\b[^>]*>)/i', '$1'.$fontStyle, $svgContent, 1);
-    }
-
-    return (string)preg_replace('/(<svg\b[^>]*>)/i', '$1<defs>'.$fontStyle.'</defs>', $svgContent, 1);
+    return array_values(array_unique($fontFamilies));
   }
 
   /**
    * @return string[]
    */
-  private function extractSvgFontFamilies(string $svgContent): array
+  private function extractFontFamiliesFromStyle(ConceptionBlocStyleInterface $style): array
   {
-    $fontStacks = [];
-    if (preg_match_all('/font-family\s*:\s*([^;}]+)/i', $svgContent, $cssMatches)) {
-      foreach ($cssMatches[1] as $fontStack) {
-        $fontStacks[] = trim((string)$fontStack);
-      }
-    }
-
-    if (preg_match_all('/font-family\s*=\s*([\'"])(.*?)\1/i', $svgContent, $attributeMatches)) {
-      foreach ($attributeMatches[2] as $fontStack) {
-        $fontStacks[] = trim((string)$fontStack);
-      }
-    }
-
     $fontFamilies = [];
-    foreach ($fontStacks as $fontStack) {
-      foreach (explode(',', $fontStack) as $fontFamily) {
-        $fontFamily = trim($fontFamily);
-        $fontFamily = trim($fontFamily, "\"' \t\n\r\0\x0B");
-        if ($fontFamily !== '') {
-          $fontFamilies[] = $fontFamily;
+    $properties = $style->getDecodedStyle();
+    if (is_array($properties)) {
+      foreach ($properties as $property => $value) {
+        $normalizedProperty = strtolower(str_replace(['-', '_'], '', (string)$property));
+        if ($normalizedProperty === 'fontfamily') {
+          $fontFamilies = array_merge($fontFamilies, $this->splitFontFamilyStack((string)$value));
         }
       }
+    }
+
+    $rawStyle = $style->getStyle();
+    if (preg_match_all('/font-family\s*:\s*([^;}]+)/i', $rawStyle, $matches)) {
+      foreach ($matches[1] as $fontStack) {
+        $fontFamilies = array_merge($fontFamilies, $this->splitFontFamilyStack((string)$fontStack));
+      }
+    }
+
+    return array_values(array_unique($fontFamilies));
+  }
+
+  /**
+   * @return string[]
+   */
+  private function splitFontFamilyStack(string $fontStack): array
+  {
+    $fontFamilies = [];
+    foreach (explode(',', $fontStack) as $fontFamily) {
+      $fontFamily = trim($fontFamily);
+      $fontFamily = trim($fontFamily, "\"' \t\n\r\0\x0B");
+      if ($fontFamily === '' || in_array(strtolower($fontFamily), self::GENERIC_FONT_FAMILIES, true)) {
+        continue;
+      }
+
+      $fontFamilies[] = $fontFamily;
     }
 
     return array_values(array_unique($fontFamilies));

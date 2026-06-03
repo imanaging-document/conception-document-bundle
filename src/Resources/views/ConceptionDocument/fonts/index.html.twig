@@ -23,7 +23,7 @@
 
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2 class="mb-0">Administration des polices de conception</h2>
+      <h2 class="mb-0">Administration des polices des blocs texte</h2>
       <a href="{{ path('conception_document') }}" class="btn btn-outline-secondary">
         Retour aux conceptions
       </a>
@@ -41,12 +41,12 @@
               <input type="text" id="family" name="family" class="form-control" placeholder="Calibri" required>
             </div>
             <div class="col-md-4 mb-3">
-              <label for="aliases" class="form-label">Alias SVG</label>
-              <input type="text" id="aliases" name="aliases" class="form-control" placeholder="Calibri, Calibri-Bold">
+              <label for="aliases" class="form-label">Alias CSS</label>
+              <input type="text" id="aliases" name="aliases" class="form-control" placeholder="Montserrat, Montserrat-Bold">
             </div>
             <div class="col-md-4 mb-3">
-              <label for="font_files" class="form-label">Fichiers</label>
-              <input type="file" id="font_files" name="font_files[]" class="form-control" accept=".ttf,.otf,.woff,.woff2" multiple required>
+              <label for="font_files" class="form-label">Fichiers .woff2</label>
+              <input type="file" id="font_files" name="font_files[]" class="form-control" accept=".woff2,font/woff2" multiple required>
             </div>
           </div>
           <button type="submit" class="btn btn-primary">Importer</button>
@@ -64,7 +64,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <div>
             <h3 class="mb-0">{{ manifest.family }}</h3>
-            <small class="text-muted">{{ family.variants|length }} fichier(s), utilisée dans {{ family.usages }} SVG</small>
+            <small class="text-muted">{{ family.variants|length }} fichier(s) .woff2</small>
           </div>
           <form method="post"
                 action="{{ path('conception_document_fonts_delete', {familyId: family.id}) }}"
@@ -81,7 +81,7 @@
                 <input type="text" id="family-{{ family.id }}" name="family" class="form-control" value="{{ manifest.family }}" required>
               </div>
               <div class="col-md-8 mb-3">
-                <label class="form-label" for="aliases-{{ family.id }}">Alias acceptés dans les SVG</label>
+                <label class="form-label" for="aliases-{{ family.id }}">Alias CSS acceptés dans les blocs texte</label>
                 <textarea id="aliases-{{ family.id }}" name="aliases" class="form-control" rows="2">{{ manifest.aliases|join(', ') }}</textarea>
               </div>
             </div>

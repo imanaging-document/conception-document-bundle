@@ -6,7 +6,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class ConceptionFontService
 {
-  private const FONT_EXTENSIONS = ['ttf', 'otf', 'woff', 'woff2'];
+  private const FONT_EXTENSIONS = ['woff2'];
   private const MANIFEST_FILENAME = 'manifest.json';
   private ?string $fontFaceCssCache = null;
   /**
@@ -15,7 +15,8 @@ class ConceptionFontService
   private array $fontFaceCssByFamilyCache = [];
 
   public function __construct(
-    private readonly string $uploadPath
+    private readonly string $uploadPath,
+    private readonly string $fontPublicPath = '/conception-document/fonts'
   )
   {
   }
@@ -25,7 +26,7 @@ class ConceptionFontService
    */
   public function listFamilies(): array
   {
-    return $this->scanFamilies(true);
+    return $this->scanFamilies();
   }
 
   /**
@@ -45,7 +46,6 @@ class ConceptionFontService
       'path' => $directory,
       'manifest' => $manifest,
       'variants' => $manifest['variants'],
-      'usages' => $this->countSvgUsages($this->getSearchTerms($manifest)),
     ];
   }
 
@@ -81,7 +81,7 @@ class ConceptionFontService
       }
 
       if (!in_array($extension, self::FONT_EXTENSIONS, true)) {
-        throw new \InvalidArgumentException('Extension non supportée pour '.$fontFile->getClientOriginalName().' (ttf, otf, woff, woff2 uniquement).');
+        throw new \InvalidArgumentException('Extension non supportée pour '.$fontFile->getClientOriginalName().' (.woff2 uniquement).');
       }
 
       $safeFilename = $this->sanitizeFilename(pathinfo($fontFile->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$extension;
@@ -118,6 +118,9 @@ class ConceptionFontService
     foreach (($manifestData['variants'] ?? []) as $variant) {
       $file = basename((string)($variant['file'] ?? ''));
       if ($file === '' || !is_file($directory.'/'.$file)) {
+        continue;
+      }
+      if (!in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), self::FONT_EXTENSIONS, true)) {
         continue;
       }
 
@@ -222,7 +225,7 @@ class ConceptionFontService
   private function buildFontFaceCss(?array $requestedFontKeys = null, bool $includeAllVariantsForBaseFamilies = true): string
   {
     $fontFaces = [];
-    foreach ($this->scanFamilies(false) as $family) {
+    foreach ($this->scanFamilies() as $family) {
       $manifest = $family['manifest'];
       $baseFontKeys = $this->getBaseFontKeys($manifest);
       foreach ($manifest['variants'] as $variant) {
@@ -249,20 +252,14 @@ class ConceptionFontService
           continue;
         }
 
-        $fontContent = file_get_contents($fontPath);
-        if ($fontContent === false) {
-          continue;
-        }
-
         $extension = strtolower(pathinfo($fontPath, PATHINFO_EXTENSION));
-        $fontData = base64_encode($fontContent);
+        $fontUrl = $this->getFontFileUrl($family['id'], $variant['file']);
 
         foreach ($families as $fontFamily) {
           $fontFaces[] = sprintf(
-            "@font-face{font-family:'%s';src:url('data:%s;base64,%s') format('%s');font-weight:%d;font-style:%s;}",
+            "@font-face{font-family:'%s';src:url('%s') format('%s');font-weight:%d;font-style:%s;}",
             str_replace("'", "\\'", $fontFamily),
-            $this->getFontMimeType($extension),
-            $fontData,
+            str_replace("'", "%27", $fontUrl),
             $this->getFontFormat($extension),
             (int)$variant['weight'],
             $variant['style']
@@ -285,7 +282,7 @@ class ConceptionFontService
   /**
    * @return array<int, array<string, mixed>>
    */
-  private function scanFamilies(bool $withUsages): array
+  private function scanFamilies(): array
   {
     $this->ensureFontsDirectoryExists();
     $families = [];
@@ -298,7 +295,6 @@ class ConceptionFontService
         'path' => $directory,
         'manifest' => $manifest,
         'variants' => $manifest['variants'],
-        'usages' => $withUsages ? $this->countSvgUsages($this->getSearchTerms($manifest)) : 0,
       ];
     }
 
@@ -320,6 +316,26 @@ class ConceptionFontService
   private function getFontsDirectory(): string
   {
     return rtrim($this->uploadPath, '/').'/fonts';
+  }
+
+  public function getFontFilePath(string $familyId, string $filename): ?string
+  {
+    $fontPath = $this->getFamilyDirectory(basename($familyId)).'/'.basename($filename);
+    if (!is_file($fontPath)) {
+      return null;
+    }
+
+    $extension = strtolower(pathinfo($fontPath, PATHINFO_EXTENSION));
+    if (!in_array($extension, self::FONT_EXTENSIONS, true)) {
+      return null;
+    }
+
+    return $fontPath;
+  }
+
+  private function getFontFileUrl(string $familyId, string $filename): string
+  {
+    return rtrim($this->fontPublicPath, '/').'/'.rawurlencode($familyId).'/files/'.rawurlencode($filename);
   }
 
   private function normalizeFontFamilyKey(string $fontFamily): string
@@ -363,8 +379,34 @@ class ConceptionFontService
       return true;
     }
 
-    return (int)($variant['weight'] ?? 400) === 400
-      && strtolower((string)($variant['style'] ?? 'normal')) === 'normal';
+    return $this->variantMatchesRequestedBaseFamily($fontFamily, $variant);
+  }
+
+  /**
+   * @param array<string, mixed> $variant
+   */
+  private function variantMatchesRequestedBaseFamily(string $fontFamily, array $variant): bool
+  {
+    $normalizedFontFamily = strtolower($fontFamily);
+    $weight = (int)($variant['weight'] ?? 400);
+    $style = strtolower((string)($variant['style'] ?? 'normal'));
+    $expectsBold = (bool)preg_match('/(?:bold|black|heavy|semibold|demibold|extra.?bold|ultra)/i', $normalizedFontFamily);
+    $expectsItalic = (bool)preg_match('/(?:italic|oblique)/i', $normalizedFontFamily);
+
+    if ($expectsBold || $expectsItalic) {
+      if ($expectsBold && $weight < 600) {
+        return false;
+      }
+      if (!$expectsBold && $weight >= 600) {
+        return false;
+      }
+
+      return $expectsItalic
+        ? $style !== 'normal'
+        : $style === 'normal';
+    }
+
+    return $weight === 400 && $style === 'normal';
   }
 
   private function getFamilyDirectory(string $familyId): string
@@ -408,6 +450,9 @@ class ConceptionFontService
     foreach ($variants as $variant) {
       $file = basename((string)($variant['file'] ?? ''));
       if ($file === '' || !is_file($directory.'/'.$file)) {
+        continue;
+      }
+      if (!in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), self::FONT_EXTENSIONS, true)) {
         continue;
       }
 
@@ -532,50 +577,6 @@ class ConceptionFontService
     );
   }
 
-  /**
-   * @param string[] $searchTerms
-   */
-  private function countSvgUsages(array $searchTerms): int
-  {
-    if (count($searchTerms) === 0 || !is_dir($this->uploadPath)) {
-      return 0;
-    }
-
-    $usages = 0;
-    $svgFiles = new \RecursiveIteratorIterator(
-      new \RecursiveDirectoryIterator(rtrim($this->uploadPath, '/'), \FilesystemIterator::SKIP_DOTS)
-    );
-
-    foreach ($svgFiles as $svgFile) {
-      if (!($svgFile instanceof \SplFileInfo) || !$svgFile->isFile() || strtolower($svgFile->getExtension()) !== 'svg') {
-        continue;
-      }
-
-      $content = file_get_contents($svgFile->getPathname());
-      if ($content === false) {
-        continue;
-      }
-
-      foreach ($searchTerms as $searchTerm) {
-        if (stripos($content, $searchTerm) !== false) {
-          $usages++;
-          break;
-        }
-      }
-    }
-
-    return $usages;
-  }
-
-  /**
-   * @param array<string, mixed> $manifest
-   * @return string[]
-   */
-  private function getSearchTerms(array $manifest): array
-  {
-    return $this->normalizeAliases(array_merge([$manifest['family']], $manifest['aliases']));
-  }
-
   private function slugify(string $value): string
   {
     $normalized = class_exists(\Transliterator::class)
@@ -624,21 +625,6 @@ class ConceptionFontService
 
   private function getFontFormat(string $extension): string
   {
-    return match ($extension) {
-      'otf' => 'opentype',
-      'woff' => 'woff',
-      'woff2' => 'woff2',
-      default => 'truetype',
-    };
-  }
-
-  private function getFontMimeType(string $extension): string
-  {
-    return match ($extension) {
-      'otf' => 'font/otf',
-      'woff' => 'font/woff',
-      'woff2' => 'font/woff2',
-      default => 'font/ttf',
-    };
+    return 'woff2';
   }
 }

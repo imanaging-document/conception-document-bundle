@@ -33,6 +33,7 @@ class ImanagingConceptionDocumentExtension extends Extension
 
     $definition = $container->getDefinition('imanaging_conception_document.font_service');
     $definition->setArgument(0, $config['upload_path']);
+    $definition->setArgument(1, $config['font_public_path']);
 
     $definition = $container->getDefinition('imanaging_conception_document.font_controller');
     $definition->setArgument(2, $config['base_path']);

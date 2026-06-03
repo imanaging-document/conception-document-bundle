@@ -28,6 +28,10 @@
         <default key="_controller">imanaging_conception_document.font_controller::delete</default>
     </route>
 
+    <route id="conception_document_fonts_file" path="/fonts/{familyId}/files/{filename}" methods="GET">
+        <default key="_controller">imanaging_conception_document.font_controller::serveFile</default>
+    </route>
+
     <route id="conception_document_remove" path="/conception/{id}/remove">
         <default key="_controller">imanaging_conception_document.conception_document_controller::remove</default>
     </route>

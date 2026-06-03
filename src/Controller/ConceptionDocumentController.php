@@ -33,28 +33,6 @@ class ConceptionDocumentController extends AbstractController
     ConceptionTemplateInterface::DOCUMENT_FORMAT_A4,
     ConceptionTemplateInterface::DOCUMENT_FORMAT_A3,
   ];
-  private const GENERIC_SVG_FONT_FAMILIES = [
-    'caption',
-    'cursive',
-    'emoji',
-    'fantasy',
-    'fangsong',
-    'icon',
-    'math',
-    'menu',
-    'message-box',
-    'monospace',
-    'sans-serif',
-    'serif',
-    'small-caption',
-    'status-bar',
-    'system-ui',
-    'ui-monospace',
-    'ui-rounded',
-    'ui-sans-serif',
-    'ui-serif',
-  ];
-
   private EntityManagerInterface $em;
   private ConceptionDocument $conceptionDocument;
   private Environment $twig;
@@ -1694,10 +1672,6 @@ class ConceptionDocumentController extends AbstractController
             $filePath = $this->uploadPath.$bloc->getPath();
             if (!file_exists($filePath)){
               $anomalies[] = '<b>Bloc #'.$bloc->getId().'</b> : image introuvable '.$filePath;
-            } elseif (strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) === 'svg') {
-              foreach ($this->getMissingSvgFontStacks($filePath) as $fontStack => $missingFonts) {
-                $anomalies[] = '<b>Bloc #'.$bloc->getId().'</b> : le SVG utilise la police "'.htmlspecialchars($fontStack, ENT_QUOTES).'" mais aucune police correspondante n\'est disponible dans les polices de conception. Polices à ajouter ou alias à déclarer : '.htmlspecialchars(implode(', ', $missingFonts), ENT_QUOTES);
-              }
             }
           }
 
@@ -1727,162 +1701,6 @@ class ConceptionDocumentController extends AbstractController
     } else {
       return $this->json(['error_message' => 'Page introuvable : '.$id], 500);
     }
-  }
-
-  /**
-   * @return array<string, string[]>
-   */
-  private function getMissingSvgFontStacks(string $svgPath): array
-  {
-    $svgContent = file_get_contents($svgPath);
-    if ($svgContent === false) {
-      return [];
-    }
-
-    $availableFontKeys = $this->getAvailableConceptionFontFamilyKeys();
-    $missingFontStacks = [];
-
-    foreach ($this->extractSvgFontFamilyStacks($svgContent) as $fontStack) {
-      $fonts = array_values(array_filter(
-        $this->splitSvgFontFamilyStack($fontStack),
-        fn (string $font): bool => !$this->isGenericSvgFontFamily($font)
-      ));
-
-      if (count($fonts) === 0) {
-        continue;
-      }
-
-      foreach ($fonts as $font) {
-        if (isset($availableFontKeys[$this->normalizeFontFamilyKey($font)])) {
-          continue 2;
-        }
-      }
-
-      $missingFontStacks[$fontStack] = $fonts;
-    }
-
-    return $missingFontStacks;
-  }
-
-  /**
-   * @return string[]
-   */
-  private function extractSvgFontFamilyStacks(string $svgContent): array
-  {
-    $fontStacks = [];
-
-    if (preg_match_all('/font-family\s*:\s*([^;}]+)/i', $svgContent, $cssMatches)) {
-      foreach ($cssMatches[1] as $fontStack) {
-        $fontStacks[] = trim((string)$fontStack);
-      }
-    }
-
-    if (preg_match_all('/font-family\s*=\s*([\'"])(.*?)\1/i', $svgContent, $attributeMatches)) {
-      foreach ($attributeMatches[2] as $fontStack) {
-        $fontStacks[] = trim((string)$fontStack);
-      }
-    }
-
-    return array_values(array_unique(array_filter($fontStacks, static fn (string $fontStack): bool => $fontStack !== '')));
-  }
-
-  /**
-   * @return string[]
-   */
-  private function splitSvgFontFamilyStack(string $fontStack): array
-  {
-    $fonts = [];
-    foreach (explode(',', $fontStack) as $font) {
-      $font = trim($font);
-      $font = trim($font, "\"' \t\n\r\0\x0B");
-      if ($font !== '') {
-        $fonts[] = $font;
-      }
-    }
-
-    return array_values(array_unique($fonts));
-  }
-
-  /**
-   * @return array<string, true>
-   */
-  private function getAvailableConceptionFontFamilyKeys(): array
-  {
-    $fontKeys = [];
-    $fontsDirectory = rtrim($this->uploadPath, '/').'/fonts';
-    foreach (glob($fontsDirectory.'/*/manifest.json') ?: [] as $manifestPath) {
-      $manifest = json_decode((string)file_get_contents($manifestPath), true);
-      if (!is_array($manifest)) {
-        continue;
-      }
-
-      foreach ($this->getManifestFontFamilies($manifest) as $fontFamily) {
-        $fontKeys[$this->normalizeFontFamilyKey($fontFamily)] = true;
-      }
-    }
-
-    return $fontKeys;
-  }
-
-  /**
-   * @param array<string, mixed> $manifest
-   * @return string[]
-   */
-  private function getManifestFontFamilies(array $manifest): array
-  {
-    $aliases = $this->normalizeFontAliases(array_merge(
-      [(string)($manifest['family'] ?? '')],
-      is_array($manifest['aliases'] ?? null) ? $manifest['aliases'] : []
-    ));
-    $families = $aliases;
-
-    foreach (($manifest['variants'] ?? []) as $variant) {
-      if (!is_array($variant)) {
-        continue;
-      }
-
-      $weight = (int)($variant['weight'] ?? 400);
-      $style = strtolower((string)($variant['style'] ?? 'normal'));
-      foreach ($aliases as $alias) {
-        if ($weight >= 700 && $style !== 'normal') {
-          $families[] = $alias.'-BoldItalic';
-          $families[] = $alias.'-Bold-Italic';
-        } elseif ($weight >= 700) {
-          $families[] = $alias.'-Bold';
-        } elseif ($style !== 'normal') {
-          $families[] = $alias.'-Italic';
-        }
-      }
-    }
-
-    return $this->normalizeFontAliases($families);
-  }
-
-  /**
-   * @param string[] $aliases
-   * @return string[]
-   */
-  private function normalizeFontAliases(array $aliases): array
-  {
-    $normalizedAliases = [];
-    foreach ($aliases as $alias) {
-      $alias = trim((string)$alias);
-      if ($alias !== '') {
-        $normalizedAliases[] = $alias;
-      }
-    }
-
-    return array_values(array_unique($normalizedAliases));
-  }
-
-  private function isGenericSvgFontFamily(string $fontFamily): bool
-  {
-    return in_array(strtolower($fontFamily), self::GENERIC_SVG_FONT_FAMILIES, true);
-  }
-
-  private function normalizeFontFamilyKey(string $fontFamily): string
-  {
-    return strtolower(trim($fontFamily));
   }
 
   /**
