@@ -104,11 +104,11 @@
           </button>
         </div>
 
-        <div class="div-properties row g-3 mb-4" data-style-id="{{ style.id }}">
+        <div class="div-properties mb-4" data-style-id="{{ style.id }}">
           {% for property, value in style.decodedStyle %}
-            <div class="col-md-6 col-lg-4 property-row">
-              <div class="input-group input-group-sm">
-                <span class="input-group-text bg-light text-muted small border-end-0" style="min-width: 80px;">{{ property }}</span>
+            <div class="property-row">
+              <div class="property-editor">
+                <span class="property-name bg-light text-muted small">{{ property }}</span>
                 <input type="text" value="{{ value }}" data-property="{{ property }}" class="form-control style-input border-start-0" data-style-id="{{ style.id }}">
                 <button class="btn btn-outline-danger remove-property" type="button">
                   <i class="fa fa-trash"></i>
@@ -140,5 +140,44 @@
     background-color: #fff9e6 !important;
     border-color: #ffc107;
     box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+  }
+  .div-properties {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+    gap: 1rem;
+    width: 100%;
+  }
+  .property-row {
+    min-width: 0;
+  }
+  .property-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 42%) minmax(0, 1fr) 42px;
+    align-items: stretch;
+    width: 100%;
+  }
+  .property-name {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-right: 0;
+    border-radius: 0.25rem 0 0 0.25rem;
+    overflow-wrap: anywhere;
+  }
+  .property-editor .style-input {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    border-radius: 0;
+  }
+  .property-editor .remove-property {
+    width: 42px;
+    min-width: 42px;
+    margin: 0;
+    padding: 0.375rem;
+    border-radius: 0 0.25rem 0.25rem 0;
   }
 </style>

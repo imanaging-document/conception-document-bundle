@@ -259,7 +259,25 @@
           opacity: 1;
       }
 
+      .bloc-element.hold-highlight{
+          box-shadow: 0 0 0 3px #0d6efd !important;
+      }
+
       .hold-highlight td {
+          background-color: transparent !important;
+          color: inherit !important;
+      }
+
+      /* Une ligne de bloc sélectionnée doit rester lisible sur les lignes
+         alternées du tableau, y compris pendant le survol. */
+      .bloc-row.hold-highlight,
+      .bloc-row.hold-highlight:hover {
+          background-color: #cfe2ff !important;
+          color: #084298 !important;
+          box-shadow: inset 5px 0 0 #0d6efd;
+      }
+
+      .bloc-row.hold-highlight td {
           background-color: transparent !important;
           color: inherit !important;
       }
@@ -708,8 +726,61 @@
       });
     }
 
+    function clearBlocSelection(){
+      $(".bloc-element").removeClass('no-hold-highlight').removeClass('hold-highlight');
+      $(".bloc-row").removeClass('hold-highlight');
+    }
+
+    function refreshBlocSelectionStyles(){
+      var $selectedBlocs = $(".bloc-element.hold-highlight");
+      if ($selectedBlocs.length){
+        $(".bloc-element").addClass('no-hold-highlight');
+        $selectedBlocs.removeClass('no-hold-highlight');
+      } else {
+        $(".bloc-element").removeClass('no-hold-highlight');
+      }
+    }
+
+    function findBlocElement($row){
+      var blocId = $row.find('.ordre').data('bloc-id');
+      var $element = $('.bloc-element[data-bloc-id="'+blocId+'"]').first();
+      if (!$element.length){
+        var blocCode = $row.data('bloc-code');
+        $element = $('.bloc-element').filter(function(){
+          return ($(this).data('bloc-code') || $(this).attr('id')) === blocCode;
+        }).first();
+      }
+      return $element;
+    }
+
+    function setBlocSelection($bloc, $row, additive){
+      var isSelected = $bloc.hasClass('hold-highlight');
+      if (!additive){
+        clearBlocSelection();
+      }
+
+      if (additive && isSelected){
+        $bloc.removeClass('hold-highlight');
+        if ($row && $row.length){
+          $row.removeClass('hold-highlight');
+        }
+      } else {
+        $bloc.addClass('hold-highlight');
+        if ($row && $row.length){
+          $row.addClass('hold-highlight');
+        }
+      }
+      refreshBlocSelectionStyles();
+    }
+
     $(document).keydown(function(e){
-      $div = $(".bloc-element.hold-highlight");
+      if (e.which === 27){
+        e.preventDefault();
+        clearBlocSelection();
+        return;
+      }
+
+      var $div = $(".bloc-element.hold-highlight");
       if ($div.length){
         if ($div.hasClass('bloc-locked')){
           return;
@@ -717,31 +788,51 @@
         var moveStepPx = isPreviewSnapEnabled ? getSnapStepPx() : 1;
         switch (e.which) {
           case 13:
-            var position = $div.position();
-            var leftMm = position.left * pixelRatioToMm;
-            var topMm = position.top * pixelRatioToMm;
-            var fontSize = $div.css('font-size');
-            var width = parseInt($div.css('width').slice(0, -2)) * pixelRatioToMm;
-            var height = parseInt($div.css('height').slice(0, -2)) * pixelRatioToMm;
-            updateAndSavePosition($div, leftMm, topMm, height, width, fontSize);
-            $(".bloc-element").removeClass('no-hold-highlight').removeClass('hold-highlight');
-            $(".bloc-row").removeClass('hold-highlight');
+            // La validation au clavier confirme uniquement le déplacement.
+            // Ne jamais déduire width/height/opacity depuis les styles calculés :
+            // cela transformerait notamment `auto` ou une propriété absente en
+            // valeur fixe, et pourrait envoyer la taille de police comme opacité.
+            var requests = [];
+            $div.each(function(){
+              var $selectedBloc = $(this);
+              var position = $selectedBloc.position();
+              var leftMm = position.left * pixelRatioToMm;
+              var topMm = position.top * pixelRatioToMm;
+              requests.push(updateAndSavePosition($selectedBloc, leftMm, topMm, undefined, undefined, undefined, undefined, {
+                reloadPreview: false,
+                showToast: false
+              }));
+            });
+            if (requests.length){
+              $.when.apply($, requests).always(function(){
+                loadPreview();
+              });
+            }
+            clearBlocSelection();
             break;
           case 37:
             e.preventDefault();
-            moveBlocInPreview($div, -moveStepPx, 0);
+            $div.each(function(){
+              moveBlocInPreview($(this), -moveStepPx, 0);
+            });
             break;
           case 38:
             e.preventDefault();
-            moveBlocInPreview($div, 0, -moveStepPx);
+            $div.each(function(){
+              moveBlocInPreview($(this), 0, -moveStepPx);
+            });
             break;
           case 39:
             e.preventDefault();
-            moveBlocInPreview($div, moveStepPx, 0);
+            $div.each(function(){
+              moveBlocInPreview($(this), moveStepPx, 0);
+            });
             break;
           case 40:
             e.preventDefault();
-            moveBlocInPreview($div, 0, moveStepPx);
+            $div.each(function(){
+              moveBlocInPreview($(this), 0, moveStepPx);
+            });
             break;
           case 100:
             e.preventDefault();
@@ -771,16 +862,11 @@
       }
     });
 
-    $(document).on('click', '.bloc-row', function(){
-      var blocCode = $(this).data('bloc-code');
-      if (!$(this).hasClass('hold-highlight')){
-        $(".bloc-element").addClass('no-hold-highlight').removeClass('hold-highlight');
-        $(".bloc-row").removeClass('hold-highlight');
-        $(this).addClass('hold-highlight');
-        $("#"+blocCode).addClass('hold-highlight');
-      } else {
-        $(".bloc-element").removeClass('no-hold-highlight').removeClass('hold-highlight');
-        $(".bloc-row").removeClass('hold-highlight');
+    $(document).on('click', '.bloc-row', function(e){
+      var $row = $(this);
+      var $bloc = findBlocElement($row);
+      if ($bloc.length){
+        setBlocSelection($bloc, $row, e.ctrlKey || e.metaKey);
       }
     });
 
@@ -811,22 +897,46 @@
       });
     });
 
-    $(document).on('click', '.edit-bloc', function(){
+    var blocEditionRequest = null;
+
+    function loadBlocEdition($editButton){
+      if (!$editButton || !$editButton.length){
+        return;
+      }
+
+      var urlEdition = $editButton.data('url-edition');
+      var blocId = $editButton.data('bloc-id');
+      var $editionContainer = $("#div-edit-bloc");
+
+      if (blocEditionRequest && blocEditionRequest.readyState !== 4){
+        blocEditionRequest.abort();
+      }
+
+      $editionContainer.data('bloc-id', blocId).removeClass('text-danger');
       $("#loader-edit-bloc").removeClass('d-none');
-      var urlEdition = $(this).data('url-edition');
-      $.ajax({
+      blocEditionRequest = $.ajax({
         url: urlEdition,
         type: 'GET',
         success: function (data) {
-          $("#div-edit-bloc").html(data);
+          if (String($editionContainer.data('bloc-id')) === String(blocId)){
+            $editionContainer.html(data);
+          }
         },
-        error: function () {
-          $("#div-edit-bloc").html('Une erreur est survenue lors du chargement du bloc !').addClass('text-danger');
+        error: function (request, status) {
+          if (status !== 'abort' && String($editionContainer.data('bloc-id')) === String(blocId)){
+            $editionContainer.removeData('bloc-id').html('Une erreur est survenue lors du chargement du bloc !').addClass('text-danger');
+          }
         },
         complete: function(){
-          $("#loader-edit-bloc").addClass('d-none');
+          if (String($editionContainer.data('bloc-id')) === String(blocId)){
+            $("#loader-edit-bloc").addClass('d-none');
+          }
         }
       });
+    }
+
+    $(document).on('click', '.edit-bloc', function(){
+      loadBlocEdition($(this));
     });
 
     $(document).on('click', '#cbx-select-all-blocs', function(){
@@ -980,7 +1090,8 @@
       })
     }
 
-    function updateAndSavePosition(element, x, y, height, width, opacity, fontSize){
+    function updateAndSavePosition(element, x, y, height, width, opacity, fontSize, options){
+      options = options || {};
       if (isPreviewSnapEnabled){
         var snapStep = Math.max(1, previewSnapStepMm);
         if (!isNaN(parseFloat(x))){
@@ -997,18 +1108,47 @@
         }
       }
       var blocId = element.data('bloc-id');
-      var data = {bloc_id: blocId, x: x, y: y, font_size: fontSize, height: height, width: width, opacity: opacity};
-      $.ajax({
+      var data = {bloc_id: blocId, x: x, y: y};
+      if (height !== undefined && height !== null && height !== ''){
+        data.height = height;
+      }
+      if (width !== undefined && width !== null && width !== ''){
+        data.width = width;
+      }
+      if (opacity !== undefined && opacity !== null && opacity !== ''){
+        data.opacity = opacity;
+      }
+      if (fontSize !== undefined && fontSize !== null && fontSize !== ''){
+        data.font_size = fontSize;
+      }
+      var request = $.ajax({
         url: "{{ path('conception_document_conception_tool_bloc_save_position') }}",
         type: 'POST',
         data: data,
         success: function (data) {
-          element.css({left: data.x, top: data.y, height: data.height, width: data.width, opacity: data.opacity});
-          Toast.fire({
-            type: 'success',
-            title: 'Nouvelle position enregistrée :)'
-          });
-          loadPreview();
+          var savedStyles = {left: data.x, top: data.y};
+          if (Object.prototype.hasOwnProperty.call(data, 'height')){
+            savedStyles.height = data.height;
+          }
+          if (Object.prototype.hasOwnProperty.call(data, 'width')){
+            savedStyles.width = data.width;
+          }
+          if (Object.prototype.hasOwnProperty.call(data, 'opacity')){
+            savedStyles.opacity = data.opacity;
+          }
+          if (Object.prototype.hasOwnProperty.call(data, 'font-size')){
+            savedStyles['font-size'] = data['font-size'];
+          }
+          element.css(savedStyles);
+          if (options.showToast !== false){
+            Toast.fire({
+              type: 'success',
+              title: 'Nouvelle position enregistrée :)'
+            });
+          }
+          if (options.reloadPreview !== false){
+            loadPreview();
+          }
         },
         error: function () {
           Toast.fire({
@@ -1017,6 +1157,7 @@
           });
         }
       });
+      return request;
     }
 
     $(document).on('click', '.btn-new-property', function(){
@@ -1041,11 +1182,10 @@
         if (result.value) {
           var property = result.value[0];
           var value = result.value[1];
-          var $propertyRow = $('<div>').addClass('col-md-6 col-lg-4 property-row');
-          var $inputGroup = $('<div>').addClass('input-group input-group-sm');
+          var $propertyRow = $('<div>').addClass('property-row');
+          var $propertyEditor = $('<div>').addClass('property-editor');
           var $propertyLabel = $('<span>')
-            .addClass('input-group-text bg-light text-muted small border-end-0')
-            .css('min-width', '80px')
+            .addClass('property-name bg-light text-muted small')
             .text(property);
           var $propertyInput = $('<input>')
             .attr('type', 'text')
@@ -1058,28 +1198,34 @@
             .addClass('btn btn-outline-danger remove-property')
             .append($('<i>').addClass('fa fa-trash'));
 
-          $inputGroup.append($propertyLabel, $propertyInput, $removeButton);
-          $propertyRow.append($inputGroup);
+          $propertyEditor.append($propertyLabel, $propertyInput, $removeButton);
+          $propertyRow.append($propertyEditor);
           $('.div-properties[data-style-id="'+styleId+'"]').append($propertyRow);
         }
       })
     });
 
-    $(document).on('click', '.bloc-element', function(){
-      var blocCode = $(this).data('bloc-code');
-      if (!$(this).hasClass('hold-highlight')){
-        $(".bloc-element").addClass('no-hold-highlight').removeClass('hold-highlight');
-        $(".bloc-row").removeClass('hold-highlight');
-        $(this).addClass('hold-highlight');
+    $(document).on('click', '.bloc-element', function(e){
+      var $bloc = $(this);
+      var blocId = $bloc.data('bloc-id');
+      var blocCode = $bloc.data('bloc-code') || $bloc.attr('id');
+      var $row = $('#bloc_'+blocId);
 
-        // Scroll vers la ligne du tableau dans la zone #help
-        var $row = $('.bloc-row[data-bloc-code="'+blocCode+'"]');
-        if ($row.length) {
-            $row.addClass('hold-highlight');
+      if (!$row.length && blocCode){
+        $row = $('.bloc-row').filter(function(){
+          return $(this).data('bloc-code') === blocCode;
+        }).first();
+      }
+
+      var isAdditiveSelection = e.ctrlKey || e.metaKey;
+      setBlocSelection($bloc, $row, isAdditiveSelection);
+
+      if ($row.length) {
+        if (!isAdditiveSelection && String($("#div-edit-bloc").data('bloc-id')) !== String(blocId)){
+          loadBlocEdition($row.find('.edit-bloc').first());
+        } else if (isAdditiveSelection && $bloc.hasClass('hold-highlight')){
+          loadBlocEdition($row.find('.edit-bloc').first());
         }
-      } else {
-        $(".bloc-element").removeClass('no-hold-highlight').removeClass('hold-highlight');
-        $(".bloc-row").removeClass('hold-highlight');
       }
     });
 
@@ -1144,10 +1290,9 @@
     });
 
     $(document).on('mouseenter', '.bloc-element', function(){
-      var blocCode = $(this).data('bloc-code');
       if (!$(this).hasClass('hold-highlight')){
         $(".bloc-element").addClass('no-highlight');
-        $("#"+blocCode).addClass('highlight');
+        $(this).addClass('highlight');
       }
     });
 

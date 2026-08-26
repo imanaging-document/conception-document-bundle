@@ -1233,24 +1233,24 @@ class ConceptionDocumentController extends AbstractController
         $properties = json_decode($rootStyle->getStyle(), true);
         $properties['left'] = $params['x'].'mm';
         $properties['top'] = $params['y'].'mm';
-        if (isset($params['height'])){
+        if (isset($params['height']) && $params['height'] !== ''){
           if (!in_array($params['height'], ['auto'])){
             $properties['height'] = $params['height'].'mm';
           } else {
             $properties['height'] = $params['height'];
           }
         }
-        if (isset($params['width'])){
+        if (isset($params['width']) && $params['width'] !== ''){
           if (!in_array($params['width'], ['auto'])){
             $properties['width'] = $params['width'].'mm';
           } else {
             $properties['width'] = $params['width'];
           }
         }
-        if (isset($params['opacity'])){
+        if (isset($params['opacity']) && $params['opacity'] !== ''){
           $properties['opacity'] = $params['opacity'];
         }
-        if (isset($params['font_size'])){
+        if (isset($params['font_size']) && $params['font_size'] !== ''){
           $properties['font-size'] = $params['font_size'];
         }
         $rootStyle->setStyle(json_encode($properties));
