@@ -277,6 +277,8 @@ class ConceptionDocumentController extends AbstractController
               }
             } elseif($bloc->getType()->getCode() == 'formes_predefinies'){
               $formattedBloc['type_forme'] = $bloc->getTypeForme();
+            } elseif($bloc->getType()->getCode() == 'bloc_qrcode'){
+              $formattedBloc['qrcode_content'] = $bloc->getTexte();
             } elseif($bloc->getType()->getCode() == 'bloc_texte'){
               $formattedBloc['texte'] = $bloc->getTexte();
               $formattedBloc['mode_raw'] = $bloc->isModeRaw();
@@ -434,9 +436,12 @@ class ConceptionDocumentController extends AbstractController
                   }
                 } elseif($codeType == 'formes_predefinies'){
                   $bloc->setTypeForme($formattedBloc['type_forme']);
+                } elseif($codeType == 'bloc_qrcode'){
+                  $bloc->setTexte((string)($formattedBloc['qrcode_content'] ?? $formattedBloc['texte'] ?? ''));
+                  $bloc->setModeRaw(false);
                 } elseif($codeType == 'bloc_texte'){
-                  $bloc->setTexte($formattedBloc['texte']);
-                  $bloc->setModeRaw($formattedBloc['mode_raw']);
+                  $bloc->setTexte($formattedBloc['texte'] ?? '');
+                  $bloc->setModeRaw((bool)($formattedBloc['mode_raw'] ?? false));
                 }
 
                 foreach($formattedBloc['styles'] as $formattedStyle){
