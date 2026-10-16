@@ -1729,7 +1729,10 @@ class DocumentEditor {
       const el = this.element(b.key);
       if (this.definition.mode === "free" && el) {
         const box = this.box(b.key);
-        if (
+        if (el.dataset.overflow === "visible")
+          warnings.push(`${b.label} : dépassement du cadre sans contenu coupé.`);
+        else if (
+          el.dataset.overflow === "true" ||
           box.x + box.w > w + 0.2 ||
           box.y + box.h > h + 0.2 ||
           el.scrollHeight > el.clientHeight + 2

@@ -89,6 +89,14 @@ A4 et A3 ont les deux orientations. Les anciennes conceptions A4 sont interprét
 
 Le livret compose des pages A4 portrait en ordre de lecture. FPDI/TCPDF importe ensuite les pages vectorielles sur des faces A3 paysage, avec blancs ajoutés au multiple de quatre. Pour quatre pages : `4 | 1`, puis `2 | 3`. La rotation du verso est enregistrée dans le profil. Chaque destinataire est imposé avant la fusion des lots. Une feuille recto/verso réelle doit être vérifiée sur l’imprimante cible avant envoi.
 
+## Compatibilité des blocs existants
+
+La feuille de conception applique le contexte de publipostage, comme le PDF. Le texte éditable reste celui de `DocumentDefinition` : ouvrir un bloc affiche ses champs `{…}`, sans enregistrer les valeurs du destinataire dans le modèle. Les blocs en texte brut sont échappés sans ajout de `<br>` ; leur propriété `white-space` conserve le comportement historique.
+
+Les blocs importés avec leurs styles natifs conservent les marges de paragraphes, les retraits de listes et les règles internes fournies par les entités hôtes (lignes d’adresse, groupes et commentaires d’anomalies). Ces règles sont limitées aux blocs hérités.
+
+Un ancien bloc peut déclarer une hauteur plus petite que son texte tout en laissant ce texte visible. Le rendu conserve ce comportement et signale ce dépassement de cadre dans l’éditeur. Un contenu masqué par `overflow` ou réellement coupé par les bords de la page bloque toujours le PDF. Les définitions, coordonnées et versions enregistrées ne sont pas modifiées par ces corrections de rendu.
+
 ## Rendu de référence
 
 « Vérifier le PDF » transmet le brouillon courant à Gotenberg, sans le publier. PDF.js affiche l’artefact renvoyé ; le lien de téléchargement pointe vers ce même fichier. Toute modification marque l’aperçu obsolète ; une réponse ancienne est ignorée. Un échec du moteur laisse le brouillon disponible.
