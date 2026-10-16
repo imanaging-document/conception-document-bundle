@@ -1,0 +1,8 @@
+{
+  "id": "chromium-145-gotenberg-8.27.0-v1",
+  "gotenberg": "8.27.0",
+  "chromium": "145.0.7632.109",
+  "image": "gotenberg/gotenberg@sha256:d71ab8c13b6bd47c7bc81195082005dfb17eaa75e8b1fadd347a64ee66ed98d5",
+  "cssPixelsPerInch": 96,
+  "geometryToleranceMm": 0.5
+}

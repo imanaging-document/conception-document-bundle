@@ -2,7 +2,7 @@
 
 namespace Imanaging\ConceptionDocumentBundle\Controller;
 
-use App\Service\ConceptionPersonnalisationService;
+
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Imanaging\ConceptionDocumentBundle\ConceptionDocument;
@@ -63,6 +63,18 @@ class ConceptionDocumentController extends AbstractController
    * @throws RuntimeError
    * @throws SyntaxError
    */
+  private ?\Imanaging\ConceptionDocumentBundle\Editor\Service\DocumentArchive $editorArchive = null;
+  private ?\Imanaging\ConceptionDocumentBundle\Editor\Service\TemplateStateStore $editorStore = null;
+  private ?\Imanaging\ConceptionDocumentBundle\Editor\Service\AssetStore $editorAssets = null;
+
+  private ?\Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface $editorTokens = null;
+
+  public function setEditorStorage(\Imanaging\ConceptionDocumentBundle\Editor\Service\DocumentArchive $archive, \Imanaging\ConceptionDocumentBundle\Editor\Service\TemplateStateStore $store, \Imanaging\ConceptionDocumentBundle\Editor\Service\AssetStore $assets, bool $enabled, ?\Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface $tokens=null): void
+  {
+    $this->editorTokens=$tokens;
+    if($enabled){$this->editorArchive=$archive;$this->editorStore=$store;$this->editorAssets=$assets;}
+  }
+
   public function index(): Response
   {
     $conceptions = $this->em->getRepository(ConceptionTemplateInterface::class)->findAll();
@@ -229,6 +241,11 @@ class ConceptionDocumentController extends AbstractController
 
   public function uploadYaml($id)
   {
+    if($this->editorArchive){
+      $template=$this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
+      if(!$template)throw $this->createNotFoundException('Conception introuvable.');
+      return $this->file($this->editorArchive->write($this->editorStore->current($template)),'conception.zip')->deleteFileAfterSend(true);
+    }
     $template = $this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
     if ($template instanceof ConceptionTemplateInterface){
       $imagesPathToZip = [];
@@ -350,6 +367,19 @@ class ConceptionDocumentController extends AbstractController
 
   public function importYaml($id, Request $request)
   {
+    if($this->editorArchive){
+      $template=$this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
+      if(!$template)throw $this->createNotFoundException('Conception introuvable.');
+      try{
+        $file=$request->files->get('fichier');if(!$file)throw new \DomainException('Sélectionnez une archive ZIP.');
+        $user=$this->editorTokens->getToken()->getUser()->getUserIdentifier();
+        $state=$this->editorStore->document($template,$user);
+        $draft=$this->editorStore->importAsDraft($template,$user,$this->editorArchive->read($file->getPathname()),$state['version'],$state['sequence']+1);
+        $this->editorStore->publish($template,$user,['definition'=>$draft['definition'],'baseVersion'=>$draft['baseVersion']]);
+        $this->addFlash('success','Conception importée et version enregistrée.');
+      }catch(\DomainException|\InvalidArgumentException $e){$this->addFlash('error',$e->getMessage());}
+      return $this->redirectToRoute('conception_document');
+    }
     $template = $this->em->getRepository(ConceptionTemplateInterface::class)->find($id);
     if ($template instanceof ConceptionTemplateInterface){
       $files = $request->files->all();
@@ -1422,6 +1452,12 @@ class ConceptionDocumentController extends AbstractController
     $bloc = $this->em->getRepository(ConceptionBlocInterface::class)->find($params['bloc_id']);
     if ($bloc instanceof ConceptionBlocInterface){
       if ($bloc->getType()->getCode() == 'bloc_image'){
+        if($this->editorAssets){
+          $image=$request->files->get('image');if(!$image)return $this->json(['error_message'=>'Sélectionnez une image.'],422);
+          try{$asset=$this->editorAssets->importFile($image->getPathname());}catch(\DomainException $e){return $this->json(['error_message'=>$e->getMessage()],422);}
+          $bloc->setPath($asset['path']);$this->em->flush();return $this->json(['new_path'=>$asset['path']]);
+        }
+
         $files = $request->files->all();
         $image = $files['image'];
         if ($image instanceof UploadedFile){

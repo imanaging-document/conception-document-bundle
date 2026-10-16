@@ -1,0 +1,6 @@
+# Profile validated by the document editor's render recipe.
+services:
+  gotenberg:
+    image: gotenberg/gotenberg@sha256:d71ab8c13b6bd47c7bc81195082005dfb17eaa75e8b1fadd347a64ee66ed98d5
+    restart: unless-stopped
+    # Keep this service on the private application network; no published port is needed.

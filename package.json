@@ -1,0 +1,29 @@
+{
+  "name": "@imanaging/conception-document-editor",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/arimo": "^5.3.0",
+    "@fontsource/gelasio": "^5.3.0",
+    "@fontsource/libre-barcode-128": "^5.3.0",
+    "@fontsource/montserrat": "^5.3.0",
+    "@fontsource/tinos": "^5.3.0",
+    "@tiptap/core": "^3.0.0",
+    "@tiptap/extension-highlight": "^3.0.0",
+    "@tiptap/extension-table": "^3.0.0",
+    "@tiptap/extension-text-align": "^3.0.0",
+    "@tiptap/extension-text-style": "^3.0.0",
+    "@tiptap/pm": "^3.0.0",
+    "@tiptap/starter-kit": "^3.0.0",
+    "pagedjs": "^0.4.3",
+    "pdfjs-dist": "^6.4.299"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.0"
+  }
+}

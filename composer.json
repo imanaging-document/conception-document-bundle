@@ -10,7 +10,7 @@
     },
     "authors": [
         {
-            "name": "Rémi Zanzi",
+            "name": "Remi Zanzi",
             "email": "r.zanzi@imanaging-document.fr"
         },
         {
@@ -23,6 +23,21 @@
         "doctrine/orm": "^2.14 || ^3.0",
         "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
         "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
-        "endroid/qr-code": "^6.0"
+        "endroid/qr-code": "^6.0",
+        "symfony/http-client": "^6.4 || ^7.0 || ^8.0",
+        "symfony/mime": "^6.4 || ^7.0 || ^8.0",
+        "symfony/html-sanitizer": "^6.4 || ^7.0 || ^8.0",
+        "symfony/yaml": "^6.4 || ^7.0 || ^8.0",
+        "setasign/fpdi": "^2.6",
+        "tecnickcom/tcpdf": "^6.10",
+        "ext-dom": "*",
+        "ext-fileinfo": "*",
+        "ext-mbstring": "*",
+        "ext-zip": "*"
+    },
+    "config": {
+        "platform": {
+            "php": "8.3"
+        }
     }
 }

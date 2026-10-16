@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Conception · {{ template.libelle }}</title>
+    {% block editor_stylesheets %}{% endblock %}
+</head>
+<body>
+    <div id="document-editor" data-api="{{ path('conception_document_editor_api',{id:template.id,entityId:entityId,action:'document'})|replace({'/document':'/ACTION'}) }}" data-csrf="{{ csrf }}" data-classic="{{ path('conception_document_conception_tool',{id:template.id,entityId:entityId,pageNumber:1}) }}"></div>
+    {% block editor_javascripts %}{% endblock %}
+</body>
+</html>

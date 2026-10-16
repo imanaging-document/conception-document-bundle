@@ -48,6 +48,27 @@ class ConceptionDocument
     $this->conceptionPersonnalisationService = $conceptionPersonnalisationService;
   }
 
+  private ?\Imanaging\ConceptionDocumentBundle\Editor\Service\DocumentGateway $documentGateway = null;
+
+  public function setDocumentGateway(\Imanaging\ConceptionDocumentBundle\Editor\Service\DocumentGateway $gateway): void
+  {
+    $this->documentGateway = $gateway;
+  }
+
+  public function freezeTemplate(ConceptionTemplateInterface $template): array
+  {
+    if (!$this->documentGateway) throw new \LogicException('Service de rendu documentaire non configuré.');
+    return $this->documentGateway->freeze($template);
+  }
+
+  public function generatePdfAtPath(string $path, ConceptionDocumentInterface $item, ConceptionTemplateInterface $template, ?array $frozen = null, ?\DateTimeImmutable $referenceDate = null): array
+  {
+    if ($this->documentGateway && ($frozen || $this->documentGateway->supports($template))) {
+      return $this->documentGateway->generateAtPath($path, $item, $template, $frozen, $referenceDate);
+    }
+    return $this->generatePdfWithWkhtml($path, $item, $template);
+  }
+
   public function showSearchEntityForm(ConceptionTemplateTypeInterface $typeTemplate): Response
   {
     return new Response($this->conceptionPersonnalisationService->showSearchEntityForm($typeTemplate));
@@ -109,6 +130,9 @@ class ConceptionDocument
     ConceptionDocumentInterface $conceptionDocument,
     ConceptionTemplateInterface $conceptionTemplate
   ): string {
+    if ($this->documentGateway && $this->documentGateway->supports($conceptionTemplate)) {
+      return $this->documentGateway->html($conceptionDocument, $conceptionTemplate);
+    }
     $documentFormat = $this->getDocumentFormat($conceptionTemplate);
     [$pageWidthMm, $pageHeightMm] = $this->getDocumentDimensionsMm($documentFormat);
     $visiblePages = $this->getVisiblePages($conceptionTemplate, $conceptionDocument);
@@ -141,7 +165,7 @@ class ConceptionDocument
     ConceptionDocumentInterface $conceptionDocument,
     ConceptionTemplateInterface $conceptionTemplate
   ): array {
-    return $this->generatePdfWithWkhtml($filePath, $conceptionDocument, $conceptionTemplate);
+    return $this->generatePdfAtPath($filePath, $conceptionDocument, $conceptionTemplate);
   }
 
   private function generatePdfWithWkhtml(

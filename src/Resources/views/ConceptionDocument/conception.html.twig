@@ -447,6 +447,7 @@
       }
   </style>
 
+  {% if conceptionEditorEnabled() %}<a href="{{ path('conception_document_editor',{id:page.template.id,entityId:entity_id}) }}" style="position:fixed;bottom:16px;left:16px;z-index:10000;padding:12px 18px;background:#245bd6;color:white;border-radius:6px;text-decoration:none">Ouvrir le nouvel éditeur</a>{% endif %}
   <div id="conception-layout" class="{% if is_a3_landscape %}layout-landscape{% else %}layout-portrait{% endif %}">
     <div id="preview">
     </div>

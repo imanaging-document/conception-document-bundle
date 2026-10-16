@@ -1,0 +1,393 @@
+:root {
+  font:
+    13px Arial,
+    sans-serif;
+  color: #26354b;
+  background: #eef1f5;
+  --blue: #245bd6;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+button,
+select,
+input {
+  border: 1px solid #d7dee8;
+  border-radius: 5px;
+  background: white;
+  padding: 6px 9px;
+}
+button {
+  cursor: pointer;
+}
+button:hover {
+  border-color: var(--blue);
+  background: #edf3ff;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+a {
+  color: #245bd6;
+}
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  box-shadow: 0 2px 10px #273a501a;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5eaf0;
+}
+.heading strong {
+  font-size: 16px;
+}
+.actions,
+.tools,
+.row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tools {
+  padding: 8px 16px;
+  border-bottom: 1px solid #e5eaf0;
+}
+.tools label {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 11px;
+}
+.tools input[type="number"] {
+  width: 66px;
+}
+.tools input[type="color"] {
+  width: 33px;
+  padding: 2px;
+  height: 29px;
+}
+.primary {
+  background: #245bd6;
+  color: white;
+  border-color: #245bd6;
+}
+.primary:hover {
+  background: #194bb9;
+}
+.status {
+  font-size: 12px;
+  color: #61718b;
+  max-width: 450px;
+}
+.status.error {
+  color: #b82535;
+}
+.workspace {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  height: calc(100vh - 190px);
+}
+aside {
+  background: #fff;
+  border-right: 1px solid #dce3ed;
+  padding: 14px;
+  overflow: auto;
+}
+aside h2 {
+  font-size: 14px;
+  margin: 18px 0 8px;
+}
+aside button.block {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 5px 0;
+  font-size: 12px;
+  padding: 9px;
+}
+aside button.selected {
+  background: #edf3ff;
+  border-color: #245bd6;
+  color: #245bd6;
+}
+.page-buttons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+main {
+  overflow: auto;
+  padding: 25px;
+  position: relative;
+}
+.sheet-shell {
+  position: relative;
+  margin: 0 auto;
+}
+.sheet-frame {
+  border: 0;
+  background: white;
+  box-shadow: 0 8px 30px #22344d26;
+  transform-origin: top left;
+  display: block;
+}
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-origin: top left;
+}
+.selection-box {
+  position: absolute;
+  border: 2px solid #245bd6;
+  pointer-events: none;
+}
+.handle {
+  position: absolute;
+  background: #245bd6;
+  color: white;
+  border: 2px solid white;
+  pointer-events: auto;
+  touch-action: none;
+  padding: 0;
+}
+.move-handle {
+  top: -23px;
+  left: -2px;
+  font-size: 10px;
+  width: 72px;
+  height: 22px;
+  cursor: move;
+}
+.resize-handle {
+  bottom: -6px;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+.guide {
+  position: absolute;
+  background: #ed4086;
+  pointer-events: none;
+}
+.guide.x {
+  width: 1px;
+  top: 0;
+  bottom: 0;
+}
+.guide.y {
+  height: 1px;
+  left: 0;
+  right: 0;
+}
+.grid {
+  background-image:
+    linear-gradient(#7690b51a 1px, transparent 1px),
+    linear-gradient(90deg, #7690b51a 1px, transparent 1px);
+  background-size: 18.8976px 18.8976px;
+}
+.hint {
+  padding: 5px 16px;
+  color: #64748b;
+  font-size: 11px;
+  background: #f8faff;
+  display: flex;
+  justify-content: space-between;
+}
+.pdf-panel {
+  position: fixed;
+  inset: 35px;
+  z-index: 30;
+  background: #e5eaf0;
+  box-shadow: 0 0 0 80px #17263d88;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pdf-toolbar {
+  padding: 10px;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.pdf-pages {
+  overflow: auto;
+  padding: 15px;
+  flex: 1;
+}
+.pdf-pages canvas {
+  display: block;
+  margin: 0 auto 16px;
+  box-shadow: 0 3px 14px #0002;
+}
+.panel {
+  position: fixed;
+  inset: 10% 25%;
+  background: white;
+  z-index: 25;
+  border: 1px solid #ccd5e0;
+  box-shadow: 0 0 0 100vw #17263d66;
+  border-radius: 9px;
+  padding: 20px;
+  overflow: auto;
+}
+.panel h2 {
+  font-size: 18px;
+}
+.panel textarea {
+  width: 100%;
+  height: 300px;
+  border: 1px solid #ccd5e0;
+}
+.gallery {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.gallery img {
+  width: 90px;
+  height: 70px;
+  object-fit: contain;
+  border: 1px solid #ccd5e0;
+  cursor: pointer;
+}
+.warning {
+  background: #fff4da;
+  color: #825600;
+  padding: 8px;
+  margin: 7px 0;
+  font-size: 12px;
+}
+.field-picker {
+  max-width: 215px;
+}
+.prosemirror-menu {
+  background: #f0f5ff;
+}
+.ProseMirror {
+  outline: 2px solid #20a270 !important;
+  min-height: 1em;
+  cursor: text;
+}
+.variable-chip {
+  background: #e3ecff;
+  color: #2452a5;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.flow-editor {
+  background: white;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto 20px;
+  box-shadow: 0 3px 15px #0001;
+}
+.flow-editor .ProseMirror {
+  min-height: 130px;
+}
+.page-break {
+  border-top: 1px dashed #a5afbd;
+  margin: 15px 0;
+}
+.empty {
+  padding: 70px;
+  text-align: center;
+  color: #61718b;
+}
+.geometry {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.geometry label {
+  font-size: 11px;
+}
+.geometry input {
+  width: 100%;
+  margin-top: 3px;
+}
+.badges {
+  font-size: 10px;
+  color: #61718b;
+}
+.hidden {
+  display: none !important;
+}
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 200px 1fr;
+  }
+  .heading {
+    flex-wrap: wrap;
+  }
+  .panel {
+    inset: 6%;
+  }
+  .tools {
+    gap: 4px;
+  }
+}
+@media (max-width: 650px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  aside {
+    max-height: 180px;
+    border-bottom: 1px solid #ddd;
+  }
+  .workspace {
+    height: auto;
+  }
+  main {
+    min-height: 70vh;
+  }
+}
+#document-editor {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+#document-editor > header {
+  flex: none;
+}
+.workspace {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.pdf-toolbar {
+  flex-wrap: wrap;
+}
+button[aria-pressed="true"] {
+  background: #dbe8ff;
+  border-color: #245bd6;
+}
+@media (max-width: 650px) {
+  #document-editor {
+    height: auto;
+  }
+  .workspace {
+    min-height: 70vh;
+  }
+}

@@ -175,4 +175,11 @@
     <route id="conception_document_conception_tool_generate_pdf" path="/conception/{id}/entity/{entityId}/generate-pdf">
         <default key="_controller">imanaging_conception_document.conception_document_controller::generatePdf</default>
     </route>
+    <route id="conception_document_editor" path="/editor/template/{id}/entity/{entityId}" methods="GET">
+      <default key="_controller">Imanaging\ConceptionDocumentBundle\Editor\Controller\EditorController::handle</default><default key="action">open</default>
+    </route>
+    <route id="conception_document_editor_api" path="/editor/template/{id}/entity/{entityId}/{action}" methods="GET|POST">
+      <default key="_controller">Imanaging\ConceptionDocumentBundle\Editor\Controller\EditorController::handle</default>
+      <requirement key="action">document|draft|publish|html|preview|versions|restore|image|asset|artifact|export|import</requirement>
+    </route>
 </routes>
