@@ -4,6 +4,7 @@ namespace Imanaging\ConceptionDocumentBundle\Editor\Service;
 
 use Imanaging\ConceptionDocumentBundle\Editor\Model\{DocumentDefinition,RenderContext};
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionPersonnalisationServiceInterface;
+use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionTemplatePersonnalisationServiceInterface;
 use Imanaging\ConceptionDocumentBundle\Service\{ConceptionFontService,ConceptionQrCodeService};
 
 final class DocumentHtmlBuilder
@@ -131,14 +132,14 @@ JS;
             $imageHeight = $imageAutoHeight ? 'auto' : ($imageAutoWidth ? ($b['style']['height'] ?? 'auto') : '100%');
             $content = '<img alt="'.$this->escape($b['label']).'" src="'.$this->assets->dataUri($b['asset']).'" style="display:block;width:'.$imageWidth.';height:'.$this->escape($imageHeight).';object-fit:'.($b['fit'] ?? $b['style']['object-fit'] ?? 'contain').';object-position:'.$this->escape($b['crop'] ?? $b['style']['object-position'] ?? '50% 50%').'">';
         } elseif ($type === 'bloc_qrcode' || !empty($b['style']['--bundle-qrcode'])) {
-            $text = $context ? $this->personalization->personnalizeText($b['text'], $context->item) : $b['text'];
+            $text = $context ? $this->personnalizeText($b['text'], $context) : $b['text'];
             $uri = $this->qr->getDataUri($text);
             $content = '<img alt="QR code" src="'.$this->escape($uri ?? '').'" style="display:block;width:100%;height:100%">';
         } elseif ($type === 'bloc_texte') {
             if (in_array(strtolower((string)($b['style']['--bundle-checkbox-native'] ?? '')), ['1','true','yes','on'], true)) {
                 $content = !empty($b['style']['--bundle-checkbox-checked']) ? 'X' : '';
             } else {
-                $text = $context ? $this->personalization->personnalizeText($b['text'], $context->item) : $b['text'];
+                $text = $context ? $this->personnalizeText($b['text'], $context) : $b['text'];
                 // Match legacy text rendering: white-space controls line breaks, never add a second break.
                 $content = ($b['raw'] ?? true) ? $text : $this->escape($text);
                 if (!($b['raw'] ?? true) && !empty($b['styles'])) {
@@ -168,6 +169,14 @@ JS;
         $legacy = !empty($b['styles']) ? ' legacy-block' : '';
         return '<'.$tag.' class="editor-block'.$zone.$legacy.'" data-block-key="'.$key.'" data-block-type="'.$this->escape($type).'" data-block-label="'.$this->escape($b['label']).'" style="'.$style.'">'.$content.'</'.$tag.'>';
     }
+    private function personnalizeText(string $text, RenderContext $context): string
+    {
+        if ($context->template !== null && $this->personalization instanceof ConceptionTemplatePersonnalisationServiceInterface) {
+            return $this->personalization->personnalizeTextForTemplate($text, $context->item, $context->template);
+        }
+        return $this->personalization->personnalizeText($text, $context->item);
+    }
+
     public function fontFamilies(): array
     {
         return array_values(array_map(fn ($family) => $family['manifest']['family'] ?? $family['family'] ?? $family['id'], $this->fonts->listFamilies()));

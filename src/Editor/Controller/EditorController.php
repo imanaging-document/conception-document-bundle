@@ -115,7 +115,7 @@ final class EditorController extends AbstractController
                 if (!$item instanceof ConceptionDocumentInterface) {
                     throw new \DomainException('Item de personnalisation introuvable.');
                 }
-                $context = new RenderContext($item, new \DateTimeImmutable());
+                $context = new RenderContext($item, new \DateTimeImmutable(), template: $template);
                 if ($action === 'html') {
                     return new Response($this->html->build($definition, $context, true), 200, ['Content-Type' => 'text/html; charset=UTF-8','Cache-Control' => 'private, no-store']);
                 }

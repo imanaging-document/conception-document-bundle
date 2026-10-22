@@ -7,6 +7,8 @@ use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionBlocStyleInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionDocumentInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionPageInterface;
 use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionPersonnalisationServiceInterface;
+use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionTemplateInterface;
+use Imanaging\ConceptionDocumentBundle\Interfaces\ConceptionTemplatePersonnalisationServiceInterface;
 use Imanaging\ConceptionDocumentBundle\Service\ConceptionFontService;
 use Imanaging\ConceptionDocumentBundle\Service\ConceptionQrCodeService;
 use Twig\Extension\AbstractExtension;
@@ -92,8 +94,11 @@ class TwigFunctions extends AbstractExtension
     }
   }
 
-  public function personnalizeText(string $text, ConceptionDocumentInterface $conceptionDocument)
+  public function personnalizeText(string $text, ConceptionDocumentInterface $conceptionDocument, ?ConceptionTemplateInterface $template = null)
   {
+    if ($template !== null && $this->conceptionPersonnalisationService instanceof ConceptionTemplatePersonnalisationServiceInterface) {
+      return $this->conceptionPersonnalisationService->personnalizeTextForTemplate($text, $conceptionDocument, $template);
+    }
     return $this->conceptionPersonnalisationService->personnalizeText($text, $conceptionDocument);
   }
 

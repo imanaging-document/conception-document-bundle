@@ -38,7 +38,7 @@ final class DocumentGateway
 
     public function html(ConceptionDocumentInterface $item, ConceptionTemplateInterface $template): string
     {
-        return $this->html->build($this->definition($template), new RenderContext($item, new \DateTimeImmutable()));
+        return $this->html->build($this->definition($template), new RenderContext($item, new \DateTimeImmutable(), template: $template));
     }
 
     public function generateAtPath(string $path, ConceptionDocumentInterface $item, ConceptionTemplateInterface $template, ?array $frozen = null, ?\DateTimeImmutable $referenceDate = null): array
@@ -48,7 +48,7 @@ final class DocumentGateway
             if ($frozen && !hash_equals($frozen['hash'], $definition->hash())) {
                 throw new \DomainException('La version figée du modèle est incohérente.');
             }
-            $result = $this->renderer->render($definition, new RenderContext($item, $referenceDate ?? new \DateTimeImmutable()));
+            $result = $this->renderer->render($definition, new RenderContext($item, $referenceDate ?? new \DateTimeImmutable(), template: $template));
             $directory = dirname($path);
             if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
                 throw new \RuntimeException('Répertoire PDF inaccessible.');

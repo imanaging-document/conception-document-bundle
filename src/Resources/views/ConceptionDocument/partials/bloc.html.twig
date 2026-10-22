@@ -2,7 +2,7 @@
   {{ bloc.css|raw }}
 </style>
 {% if isQrCodeBloc(bloc) %}
-  {% set qrcode_data_uri = getQrCodeDataUri(personnalizeText(bloc.texte, conception_document)) %}
+  {% set qrcode_data_uri = getQrCodeDataUri(personnalizeText(bloc.texte, conception_document, bloc.page.template)) %}
   <div id="{{ bloc.code }}"
        class="bloc-element bloc-qrcode{% if isBlocLocked(bloc) %} bloc-locked{% endif %}"
        data-bloc-id="{{ bloc.id }}"
@@ -35,9 +35,9 @@
   {% else %}
     <div id="{{ bloc.code }}" class="bloc-element{% if isBlocLocked(bloc) %} bloc-locked{% endif %}" data-bloc-id="{{ bloc.id }}" data-bloc-code="{{ bloc.code }}" data-bloc-locked="{% if isBlocLocked(bloc) %}1{% else %}0{% endif %}">
       {% if bloc.modeRaw %}
-        {{ personnalizeText(bloc.texte, conception_document)|raw }}
+        {{ personnalizeText(bloc.texte, conception_document, bloc.page.template)|raw }}
       {% else %}
-        {{ personnalizeText(bloc.texte, conception_document) }}
+        {{ personnalizeText(bloc.texte, conception_document, bloc.page.template) }}
       {% endif %}
     </div>
   {% endif %}
