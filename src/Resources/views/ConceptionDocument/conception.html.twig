@@ -87,6 +87,25 @@
           overflow: visible;
       }
 
+      .document-sheet.fenetres-enveloppe::before,
+      .document-sheet.fenetres-enveloppe::after {
+          content: '';
+          position: absolute;
+          z-index: 1000;
+          box-sizing: border-box;
+          outline: 0.4mm dashed #d04b20;
+          outline-offset: -0.4mm;
+          pointer-events: none;
+      }
+      .document-sheet.fenetres-enveloppe::before {
+          left: 0; top: 20mm; width: 89mm; height: 35mm;
+          background: linear-gradient(to right, rgba(255, 146, 61, .16) 14mm, rgba(37, 145, 97, .22) 14mm 71mm, rgba(255, 146, 61, .16) 71mm);
+      }
+      .document-sheet.fenetres-enveloppe::after {
+          left: 90mm; top: 55mm; width: 118mm; height: 44.5mm;
+          background: linear-gradient(to right, rgba(255, 146, 61, .16) 18mm, rgba(37, 145, 97, .22) 18mm 100mm, rgba(255, 146, 61, .16) 100mm);
+      }
+
       .preview-loading{
           padding: 20px;
           background: #fff;
@@ -479,6 +498,11 @@
           <input class="form-check-input" type="checkbox" id="cbx-preview-grid" checked>
           <label class="form-check-label small" for="cbx-preview-grid">Afficher la grille</label>
         </div>
+        <div class="form-check form-switch mb-1">
+          <input class="form-check-input" type="checkbox" id="cbx-preview-fenetres">
+          <label class="form-check-label small" for="cbx-preview-fenetres">Afficher les fenêtres de l’enveloppe</label>
+        </div>
+        <p id="aide-fenetres" class="small text-muted" hidden>Vert : zone visible pour un décalage horizontal de 0 à 18 mm ; orange : zone variable. Hauteurs indicatives : vérifier le pliage et le calage vertical.</p>
         <div class="form-check form-switch mb-2">
           <input class="form-check-input" type="checkbox" id="cbx-preview-snap" checked>
           <label class="form-check-label small" for="cbx-preview-snap">Activer le snap</label>
@@ -533,6 +557,7 @@
     var pixelRatioToMm = 0.2645833333;
     var currentPreviewScale = 1;
     var isPreviewGridEnabled = true;
+    var isPreviewWindowsEnabled = false;
     var isPreviewSnapEnabled = true;
     var previewSnapStepMm = 1;
     var previewSettingsStorageKey = 'conceptionDocument.previewSettings';
@@ -557,6 +582,9 @@
         if (savedSettings.grid !== undefined){
           isPreviewGridEnabled = savedSettings.grid === true;
         }
+        if (savedSettings.windows !== undefined){
+          isPreviewWindowsEnabled = savedSettings.windows === true;
+        }
         if (savedSettings.snap !== undefined){
           isPreviewSnapEnabled = savedSettings.snap === true;
         }
@@ -568,6 +596,8 @@
       }
 
       $('#cbx-preview-grid').prop('checked', isPreviewGridEnabled);
+      $('#cbx-preview-fenetres').prop('checked', isPreviewWindowsEnabled);
+      $('#aide-fenetres').prop('hidden', !isPreviewWindowsEnabled);
       $('#cbx-preview-snap').prop('checked', isPreviewSnapEnabled);
       $('#select-snap-step-mm').val(String(previewSnapStepMm));
     }
@@ -576,6 +606,7 @@
       try {
         localStorage.setItem(previewSettingsStorageKey, JSON.stringify({
           grid: isPreviewGridEnabled,
+          windows: isPreviewWindowsEnabled,
           snap: isPreviewSnapEnabled,
           snapStep: previewSnapStepMm
         }));
@@ -593,6 +624,7 @@
           $("#preview").html(data);
           applyPreviewScale();
           applyPreviewGrid();
+          applyPreviewWindows();
         },
         error: function () {
           $("#preview").html('Une erreur est survenue lors du chargement de la page '+resolvedPageNumber).addClass('text-danger');
@@ -620,6 +652,17 @@
       savePreviewSettings();
       applyPreviewGrid();
     });
+
+    $(document).on('change', '#cbx-preview-fenetres', function(){
+      isPreviewWindowsEnabled = $(this).prop('checked');
+      savePreviewSettings();
+      applyPreviewWindows();
+    });
+
+    function applyPreviewWindows(){
+      $('#preview .document-sheet').toggleClass('fenetres-enveloppe', isPreviewWindowsEnabled);
+      $('#aide-fenetres').prop('hidden', !isPreviewWindowsEnabled);
+    }
 
     $(document).on('change', '#cbx-preview-snap', function(){
       isPreviewSnapEnabled = $(this).prop('checked');

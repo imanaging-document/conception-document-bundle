@@ -391,3 +391,23 @@ button[aria-pressed="true"] {
     min-height: 70vh;
   }
 }
+
+/* Repères indicatifs, présents uniquement dans la superposition de l’éditeur. */
+.overlay.envelope-windows::before,
+.overlay.envelope-windows::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  outline: 0.4mm dashed #d04b20;
+  outline-offset: -0.4mm;
+  pointer-events: none;
+}
+.overlay.envelope-windows::before {
+  left: 0; top: 20mm; width: 89mm; height: 35mm;
+  background: linear-gradient(to right, rgba(255, 146, 61, .16) 14mm, rgba(37, 145, 97, .22) 14mm 71mm, rgba(255, 146, 61, .16) 71mm);
+}
+.overlay.envelope-windows::after {
+  left: 90mm; top: 55mm; width: 118mm; height: 44.5mm;
+  background: linear-gradient(to right, rgba(255, 146, 61, .16) 18mm, rgba(37, 145, 97, .22) 18mm 100mm, rgba(255, 146, 61, .16) 100mm);
+}
