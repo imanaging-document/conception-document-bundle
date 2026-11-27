@@ -34,7 +34,16 @@ final class LegacySnapshotAdapter
                     $block['shape'] = $bloc->getTypeForme();
                 }
                 if ($block['type'] === 'bloc_image') {
-                    $block['asset'] = $this->assets->importFile($this->assets->legacyPath($bloc->getPath()));
+                    try {
+                        $imagePath = $this->assets->legacyPath($bloc->getPath());
+                    } catch (\DomainException $e) {
+                        $imagePath = null;
+                    }
+                    if ($imagePath === null) {
+                        $block['missingImage'] = true;
+                    } else {
+                        $block['asset'] = $this->assets->importFile($imagePath);
+                    }
                 }
                 if ($custom = $this->blockAdapters->find($block['type'])) {
                     $block['extension'] = $custom->snapshot($bloc);

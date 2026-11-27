@@ -24,6 +24,9 @@ final class DocumentArchive
             $included = [];
             foreach ($definition->data['pages'] as $page) {
                 foreach ($page['blocks'] as $block) {
+                    if (!empty($block['missingImage'])) {
+                        throw new \DomainException('Remplacez ou supprimez les images manquantes avant l’export.');
+                    }
                     if (!isset($block['asset']) || isset($included[$block['asset']['id']])) {
                         continue;
                     }

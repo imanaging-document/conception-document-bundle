@@ -131,6 +131,13 @@ final class TemplateStateStore
                 throw new \UnexpectedValueException('La conception a été modifiée dans le mode avancé. Rechargez le modèle.');
             }
             $this->validateChanges($this->revision($state['current_revision'], $state['template_key']), $definition, $state['template_key']);
+            foreach ($definition->data['pages'] as $page) {
+                foreach ($page['blocks'] as $block) {
+                    if (!empty($block['missingImage'])) {
+                        throw new \DomainException('Image manquante dans le bloc « '.$block['label'].' » : remplacez-la ou supprimez le bloc avant l’enregistrement.');
+                    }
+                }
+            }
             $next = (int)$state['version'] + 1;
             $revision = bin2hex(random_bytes(16));
             if ($db->executeStatement('UPDATE conception_editor_state SET version = ?, current_revision = ? WHERE template_key = ? AND version = ?', [$next,$revision,$state['template_key'],$state['version']]) !== 1) {
@@ -318,6 +325,9 @@ final class TemplateStateStore
                 $prior = isset($block['id']) ? ($old[$block['id']] ?? null) : ($old[$block['key']] ?? null);
                 if (isset($block['id']) && !$prior) {
                     throw new \DomainException('Bloc étranger au modèle.');
+                }
+                if (!empty($block['missingImage']) && (empty($prior['missingImage']) || ($block['id'] ?? null) !== ($prior['id'] ?? null))) {
+                    throw new \DomainException('Référence à une image manquante invalide.');
                 }
                 if ($prior && ($parents[$block['id'] ?? $block['key']] !== ($page['id'] ?? $page['key']))) {
                     throw new \DomainException('Un bloc ne peut pas changer de page dans cette opération.');

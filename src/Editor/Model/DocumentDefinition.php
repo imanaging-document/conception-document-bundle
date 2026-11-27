@@ -68,8 +68,14 @@ final class DocumentDefinition implements \JsonSerializable
                 if (isset($block['crop']) && !preg_match('/^(?:100|\d{1,2})(?:\.\d+)?% (?:100|\d{1,2})(?:\.\d+)?%$/', $block['crop'])) {
                     throw new \InvalidArgumentException('Cadrage invalide.');
                 }
-                if ($block['type'] === 'bloc_image' && (!is_array($block['asset'] ?? null) || !preg_match('/^[a-f0-9]{64}\.(png|jpg|webp|svg)$/', $block['asset']['id'] ?? ''))) {
-                    throw new \InvalidArgumentException('Image invalide.');
+                if ($block['type'] === 'bloc_image') {
+                    $missing = ($block['missingImage'] ?? false) === true;
+                    if (($missing && (isset($block['asset']) || !isset($block['id']))) ||
+                        (!$missing && (!is_array($block['asset'] ?? null) || !preg_match('/^[a-f0-9]{64}\.(png|jpg|webp|svg)$/', $block['asset']['id'] ?? '')))) {
+                        throw new \InvalidArgumentException('Image invalide.');
+                    }
+                } elseif (isset($block['missingImage'])) {
+                    throw new \InvalidArgumentException('Image manquante invalide.');
                 }
             }
         }

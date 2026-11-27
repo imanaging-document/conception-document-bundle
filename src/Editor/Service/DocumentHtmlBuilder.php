@@ -128,9 +128,16 @@ JS;
         if ($context && ($custom = $this->blockAdapters->find($type))) {
             $content = $custom->render($b, $context);
         } elseif ($type === 'bloc_image') {
-            $imageWidth = $imageAutoWidth ? 'auto' : '100%';
-            $imageHeight = $imageAutoHeight ? 'auto' : ($imageAutoWidth ? ($b['style']['height'] ?? 'auto') : '100%');
-            $content = '<img alt="'.$this->escape($b['label']).'" src="'.$this->assets->dataUri($b['asset']).'" style="display:block;width:'.$imageWidth.';height:'.$this->escape($imageHeight).';object-fit:'.($b['fit'] ?? $b['style']['object-fit'] ?? 'contain').';object-position:'.$this->escape($b['crop'] ?? $b['style']['object-position'] ?? '50% 50%').'">';
+            if (!empty($b['missingImage'])) {
+                if (!$source) {
+                    throw new \DomainException('Image manquante dans le bloc « '.$b['label'].' » : remplacez-la ou supprimez le bloc.');
+                }
+                $content = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:25px;box-sizing:border-box;border:2px dashed #b45309;background:#fff7ed;color:#9a3412;font:12px sans-serif;text-align:center">Image manquante : remplacer ou supprimer</div>';
+            } else {
+                $imageWidth = $imageAutoWidth ? 'auto' : '100%';
+                $imageHeight = $imageAutoHeight ? 'auto' : ($imageAutoWidth ? ($b['style']['height'] ?? 'auto') : '100%');
+                $content = '<img alt="'.$this->escape($b['label']).'" src="'.$this->assets->dataUri($b['asset']).'" style="display:block;width:'.$imageWidth.';height:'.$this->escape($imageHeight).';object-fit:'.($b['fit'] ?? $b['style']['object-fit'] ?? 'contain').';object-position:'.$this->escape($b['crop'] ?? $b['style']['object-position'] ?? '50% 50%').'">';
+            }
         } elseif ($type === 'bloc_qrcode' || !empty($b['style']['--bundle-qrcode'])) {
             $text = $context ? $this->personnalizeText($b['text'], $context) : $b['text'];
             $uri = $this->qr->getDataUri($text);

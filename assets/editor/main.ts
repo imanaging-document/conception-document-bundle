@@ -1656,6 +1656,7 @@ class DocumentEditor {
         if (b?.type === "bloc_image") {
           if (this.locked(b)) throw new Error("Image verrouillée.");
           b.asset = asset;
+          delete b.missingImage;
         } else {
           const key = newKey();
           const ratio =
